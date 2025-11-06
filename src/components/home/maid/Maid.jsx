@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Application, Ticker } from 'pixi.js';
 import { Live2DModel } from 'pixi-live2d-display/cubism4';
 import '../../../styles/home/maidstyle/Maid.css';
@@ -18,8 +18,6 @@ export default function Maid() {
 	// 缓存已加载的模型：key 为路径，value 为 Live2DModel 实例
 	const preloadedRef = useRef(new Map());
 	const [collapsed, setCollapsed] = useState(false);
-	const [modelIndex, setModelIndex] = useState(0);
-	const [modelPaths, setModelPaths] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
 	// 用户可调的清晰度（渲染分辨率倍率）。默认取设备像素比，最高 2x 以兼顾性能
@@ -29,80 +27,208 @@ export default function Maid() {
 	// 设置面板开关
 	const [settingsOpen, setSettingsOpen] = useState(false);
 
-	// 运行时选择的表情（仅用于当前模型；现阶段仅 applefox 在底部控制条提供入口）
+	// 运行时选择的表情（仅用于当前模型，点击即应用，不参与合成）
 	const [selectedExpression, setSelectedExpression] = useState('');
-	// 表情面板：点击图标展开/收起（无悬停行为）
-	const [emotionOpen, setEmotionOpen] = useState(false);
-	// 动作选择分组（动作已合并进表情面板，不再单独控件）
-	const [activeMotionGroup, setActiveMotionGroup] = useState('');
+	// 装扮多选 + 动作/场景单选（参与合成表达式）
+	const [selectedClothes, setSelectedClothes] = useState([]); // string[]
+	const [selectedAction, setSelectedAction] = useState(''); // string
+	const [selectedScene, setSelectedScene] = useState(''); // string
+	// 面板打开状态：emotion | clothes | action | scene | ''
+	const [openPanel, setOpenPanel] = useState('');
 
-	// 便捷读取：当前模型的动作分组与表情列表
-	const getCurrentSettings = () => {
-		const m = modelRef.current;
-		const settings = m?.internalModel?.settings || m?.internalModel?._settings;
-		return settings || {};
-	};
+	// 当前模型 URL（用于解析表达式相对路径）与表达式 JSON 缓存
+	const modelUrlRef = useRef('');
+	const expJsonCacheRef = useRef(new Map()); // url -> json
+	// 每帧强制写入目标参数，保证“持久显示”
+	const compositeTargetRef = useRef(new Map()); // id -> value
+	const enforcerOnRef = useRef(false);
+	const enforcerFnRef = useRef(null);
 
-	const getExpressions = () => {
-		const settings = getCurrentSettings();
-		const expressions = settings?.expressions || settings?.Expressions || settings?._expressions || [];
-		const isChinese = (s = '') => /[\u4e00-\u9fa5]/.test(s);
-		const tokenMap = new Map([
-			// 常见情绪/表情
-			['xingxingyan','星星眼'], ['xingxing','星星'], ['aixinyan','爱心眼'], ['xinxinyan','心心眼'], ['xinxin','心心'],
-			['lianhong','脸红'], ['heilian','黑脸'], ['yanlei','眼泪'], ['liuhan','流汗'], ['shengqi','生气'],
-			['wenhao','问号'], ['wenhao2','问号2'], ['wuyu','无语'], ['qianyan','浅眼'], ['lunhuiyan','轮回眼'],
-			['kongbaiyan','空白眼'], ['tushe','吐舌'], ['duzui','嘟嘴'], ['guzui','鼓嘴'], ['changfa','长发'],
-			['shuangmawei','双马尾'], ['chuier','吹耳'], ['jingzi','镜子'], ['huli','狐狸'], ['baohuli','抱狐狸'],
-			['bijiben','笔记本'], ['bijiben2','笔记本2'], ['dayouxi','打游戏'], ['shanzi','扇子'], ['bixin','比心'],
-			// 英文常见
-			['cry','哭泣'], ['ft','福特/特效'], ['hat','帽子'], ['hairbun','丸子头'], ['pillow','抱枕'],
-			['facehand','手挡脸'],
-		]);
-		const deriveCN = (name = '', file = '') => {
-			if (isChinese(name) && name.trim()) return name.trim();
-			const f = (file || '').toLowerCase().replace(/\\/g,'/');
-			const base = f.split('/').pop() || '';
-			const stem = base.replace(/\.exp3?\.json$/i,'').replace(/[^a-z0-9\u4e00-\u9fa5]+/gi,'');
-			if (!stem) return name || base || '表情';
-			// 直接命中
-			if (tokenMap.has(stem)) return tokenMap.get(stem);
-			// 组合命中（按包含关系）
-			for (const [k, v] of tokenMap.entries()) {
-				if (stem.includes(k)) return v;
-			}
-			// 大写英文词
-			if (/^[a-z]+$/i.test(stem)) return stem.toUpperCase();
-			return name || stem;
-		};
-		// 统一为 {name, file, displayName}
-		return (expressions || []).map((e, i) => {
-			const name = e?.Name || e?.name || `exp-${i}`;
-			const file = e?.File || e?.file || '';
-			const displayName = deriveCN(name, file);
-			return { name, file, displayName };
-		});
-	};
+	// 模型配置中心：集中管理每个模型的路径与分类资源
+	const modelConfigs = useMemo(() => ({
+		// 樱花狐（Bhuxian）
+		sakuraFox: {
+			label: '樱花狐',
+			modelPath: '/live2dmodels/樱花狐/Bhuxian/Bhuxian.model3.json',
+			expressions: {
+				emotionList: [
+					{ name: '爱心眼', file: '爱心眼.exp3.json', displayName: '爱心眼' },
+					{ name: '害羞', file: '害羞.exp3.json', displayName: '害羞' },
+					{ name: '黑脸', file: '黑脸.exp3.json', displayName: '黑脸' },
+					{ name: '流泪', file: '流泪动画.exp3.json', displayName: '流泪' },
+					{ name: '生气', file: '生气.exp3.json', displayName: '生气' },
+					{ name: '星星眼', file: '星星眼.exp3.json', displayName: '星星眼' },
+					{ name: '歪嘴L', file: '手动歪嘴L.exp3.json', displayName: '歪嘴L' },
+					{ name: '歪嘴R', file: '手动歪嘴R.exp3.json', displayName: '歪嘴R' },
+				],
+				clothesList: [
+					{ name: '小狐狸', file: '小狐狸.exp3.json', displayName: '小狐狸' },
+					{ name: '眼镜', file: '眼镜.exp3.json', displayName: '眼镜' },
+				],
+				actionList: [
+					{ name: '折扇闭', file: '折扇（闭）.exp3.json', displayName: '折扇闭' },
+					{ name: '折扇开', file: '折扇开.exp3.json', displayName: '折扇开' },
+				],
+				sceneList: [
+					{ name: '血迹', file: '血迹.exp3.json', displayName: '血迹' },
+				],
+			},
+		},
+		// 苹果狐（Apple Fox）
+		appleFox: {
+			label: '苹果狐',
+			modelPath: '/live2dmodels/applefox/A苹果小狐狸/A苹果小狐狸.model3.json',
+			expressions: {
+				emotionList: [
+					{ name: '爱心', file: '爱心.exp3.json', displayName: '爱心' },
+					{ name: '生气', file: '生气.exp3.json', displayName: '生气' },
+					{ name: '流泪', file: '流泪.exp3.json', displayName: '流泪' },
+					{ name: '星星', file: '星星.exp3.json', displayName: '星星' },
+					{ name: '脸红', file: '脸红.exp3.json', displayName: '脸红' },
+					{ name: '脸黑', file: '脸黑.exp3.json', displayName: '脸黑' },
+					{ name: '钱钱', file: '钱钱.exp3.json', displayName: '钱钱' },
+				],
+				clothesList: [
+					{ name: '宠物', file: '宠物.exp3.json', displayName: '宠物' },
+					{ name: '尾巴', file: '尾巴.exp3.json', displayName: '尾巴' },
+					{ name: '睫毛', file: '睫毛.exp3.json', displayName: '睫毛' },
+					{ name: '棕发', file: '棕发.exp3.json', displayName: '棕发' },
+				],
+				actionList: [
+					{ name: '口红', file: '口红.exp3.json', displayName: '口红' },
+					{ name: '手势', file: '手势.exp3.json', displayName: '手势' },
+				],
+				sceneList: [
+					{ name: '背景1', file: '背景1.exp3.json', displayName: '背景1' },
+					{ name: '背景2', file: '背景2.exp3.json', displayName: '背景2' },
+					{ name: '背景3', file: '背景3.exp3.json', displayName: '背景3' },
+				],
+			},
+		},
+		// 团子鼠（粉鼠团子 / 团子出击）
+		tuanziMouse: {
+			label: '团子鼠',
+			modelPath: '/live2dmodels/粉鼠团子/团子模型文件/团子出击/团子出击.model3.json',
+			expressions: {
+				emotionList: [
+					{ name: '爱心眼', file: '爱心眼.exp3.json', displayName: '爱心眼' },
+					{ name: '打米了', file: '打米了.exp3.json', displayName: '打米了' },
+					{ name: '生气', file: '生气.exp3.json', displayName: '生气' },
+					{ name: '脸红', file: '脸红.exp3.json', displayName: '脸红' },
+					{ name: '流泪', file: '流泪.exp3.json', displayName: '流泪' },
+					{ name: '流汗', file: '流汗.exp3.json', displayName: '流汗' },
+					{ name: '晕', file: '晕.exp3.json', displayName: '晕' },
+				],
+				clothesList: [
+					{ name: '抱枕', file: '抱枕.exp3.json', displayName: '抱枕' },
+				],
+				actionList: [
+					{ name: '捏抱枕', file: '捏抱枕.exp3.json', displayName: '捏抱枕' },
+					{ name: '唱歌手', file: '唱歌手.exp3.json', displayName: '唱歌手' },
+				],
+				sceneList: [],
+			},
+		},
+		// 灵蝶狐（灵蝶之狐模型 / 芊芊）
+		lingdieFox: {
+			label: '灵蝶狐',
+			modelPath: '/live2dmodels/灵蝶之狐模型/芊芊/芊芊.model3.json',
+			expressions: {
+				emotionList: [
+					{ name: '星星眼', file: 'xingxingyan.exp3.json', displayName: '星星眼' },
+					{ name: '脸红1', file: 'lianhong.exp3.json', displayName: '脸红1' },
+					{ name: '脸红2', file: 'lianhong2.exp3.json', displayName: '脸红2' },
+					{ name: '黑脸', file: 'heilian.exp3.json', displayName: '黑脸' },
+					{ name: '流泪', file: 'yanlei.exp3.json', displayName: '流泪' },
+					{ name: '问号1', file: 'wenhao.exp3.json', displayName: '问号1' },
+					{ name: '问号2', file: 'wenhao2.exp3.json', displayName: '问号2' },
+					{ name: '流汗', file: 'liuhan.exp3.json', displayName: '流汗' },
+					{ name: '无语', file: 'wuyu.exp3.json', displayName: '无语' },
+					{ name: '钱钱', file: 'qianyan.exp3.json', displayName: '钱钱' },
+					{ name: '爱心眼', file: 'aixinyan.exp3.json', displayName: '爱心眼' },
+					{ name: '轮回眼', file: 'lunhuiyan.exp3.json', displayName: '轮回眼' },
+					{ name: '空白眼', file: 'kongbaiyan.exp3.json', displayName: '空白眼' },
+					{ name: '星星', file: 'xingxing.exp3.json', displayName: '星星' },
+					{ name: '生气', file: 'shengqi.exp3.json', displayName: '生气' },
+				],
+				clothesList: [
+					{ name: '眼珠', file: 'yanzhu.exp3.json', displayName: '眼珠' },
+					{ name: '长发', file: 'changfa.exp3.json', displayName: '长发' },
+					{ name: '双马尾', file: 'shuangmawei.exp3.json', displayName: '双马尾' },
+					{ name: '垂耳', file: 'chuier.exp3.json', displayName: '垂耳' },
+					{ name: '镜子', file: 'jingzi.exp3.json', displayName: '镜子' },
+					{ name: '狐狸', file: 'huli.exp3.json', displayName: '狐狸' },
+					{ name: '笔记本1', file: 'bijiben.exp3.json', displayName: '笔记本1' },
+					{ name: '笔记本2', file: 'bijiben2.exp3.json', displayName: '笔记本2' },
+				],
+				actionList: [
+					{ name: '吐舌', file: 'tushe.exp3.json', displayName: '吐舌' },
+					{ name: '嘟嘴', file: 'duzui.exp3.json', displayName: '嘟嘴' },
+					{ name: '鼓嘴', file: 'guzui.exp3.json', displayName: '鼓嘴' },
+					{ name: '打游戏', file: 'dayouxi.exp3.json', displayName: '打游戏' },
+					{ name: '抱狐狸', file: 'baohuli.exp3.json', displayName: '抱狐狸' },
+					{ name: '扇子', file: 'shanzi.exp3.json', displayName: '扇子' },
+					{ name: '话筒', file: 'huatong.exp3.json', displayName: '话筒' },
+					{ name: '比心', file: 'bixin.exp3.json', displayName: '比心' },
+				],
+				sceneList: [],
+			},
+		},
+		// 书仙兔（小书仙青兔）
+		shuxianRabbit: {
+			label: '书仙兔',
+			modelPath: '/live2dmodels/小书仙青兔/小书仙青兔/小书仙青兔.model3.json',
+			expressions: {
+				emotionList: [
+					{ name: '星星', file: '星星.exp3.json', displayName: '星星' },
+					{ name: '流汗', file: '流汗.exp3.json', displayName: '流汗' },
+					{ name: '流汗2', file: '流汗2.exp3.json', displayName: '流汗2' },
+					{ name: '爱心眼', file: '爱心眼.exp3.json', displayName: '爱心眼' },
+					{ name: '生气', file: '生气.exp3.json', displayName: '生气' },
+					{ name: '困困', file: '困困.exp3.json', displayName: '困困' },
+					{ name: '惊讶', file: '惊讶.exp3.json', displayName: '惊讶' },
+					{ name: '哭哭1', file: '哭哭1.exp3.json', displayName: '哭哭1' },
+					{ name: '哭哭2', file: '哭哭2.exp3.json', displayName: '哭哭2' },
+					{ name: '脸红', file: '脸红.exp3.json', displayName: '脸红' },
+					{ name: '脸黑', file: '脸黑.exp3.json', displayName: '脸黑' },
+					{ name: '钱钱', file: '钱钱.exp3.json', displayName: '钱钱' },
+					{ name: '问号', file: '问号.exp3.json', displayName: '问号' },
+					{ name: '黑眼', file: '黑眼.exp3.json', displayName: '黑眼' },
+				],
+				actionList: [
+					{ name: '吐舌', file: '吐舌.exp3.json', displayName: '吐舌' },
+					{ name: '唱歌', file: '唱歌.exp3.json', displayName: '唱歌' },
+					{ name: '看书', file: '看书.exp3.json', displayName: '看书' },
+					{ name: '看书写字', file: '看书写字.exp3.json', displayName: '看书写字' },
+					{ name: '笔的点击按键', file: '笔的点击按键.exp3.json', displayName: '笔的点击按键' },
+				],
+				clothesList: [
+					{ name: '变小', file: '变小.exp3.json', displayName: '变小' },
+					{ name: '关耳朵', file: '关耳朵.exp3.json', displayName: '关耳朵' },
+					{ name: '关飘带', file: '关飘带.exp3.json', displayName: '关飘带' },
+					{ name: '扇子', file: '扇子.exp3.json', displayName: '扇子' },
+				],
+				sceneList: [],
+			},
+		},
+	}), []);
 
-	const getMotions = () => {
-		const settings = getCurrentSettings();
-		const motions = settings?.motions || settings?.Motions || settings?._motions || {};
-		// 返回 { groupName: string, items: Array<{file: string, name?: string, sound?: string}> }
-		const groups = Object.keys(motions || {});
-		return groups.map((g) => ({
-			groupName: g,
-			items: (motions[g] || []).map((m, i) => ({
-				file: m?.File || m?.file || '',
-				name: m?.Name || m?.name || `${g}-${i}`,
-				sound: m?.Sound || m?.sound || '',
-			})),
-		}));
-	};
+	const DEFAULT_CONFIG_KEY = 'sakuraFox';
+	const [currentModelKey, setCurrentModelKey] = useState(DEFAULT_CONFIG_KEY);
 
-	// 尝试为模型启动待机动画（Idle/待机/待机动画 等常见分组）
+	const getCurrentConfig = () => modelConfigs[currentModelKey] || modelConfigs[DEFAULT_CONFIG_KEY];
+	const DEFAULT_MODEL_PATH = getCurrentConfig().modelPath;
+
+	// 直接从配置中心取分类列表
+	const getCategorizedExpressions = useCallback(() => {
+		const cfg = modelConfigs[currentModelKey] || modelConfigs[DEFAULT_CONFIG_KEY];
+		return cfg.expressions;
+	}, [currentModelKey, modelConfigs, DEFAULT_CONFIG_KEY]);
+
+
+	// 尝试为模型启动待机动画：尽量匹配更宽松的“待机”分组
 	const startIdle = async (model) => {
-		if (!model) return;
-		const preferred = ['Idle', 'idle', 'IDLE', '待机', '待机动画', '待機'];
+		if (!model) return false;
 		let groups = [];
 		try {
 			const settings = model?.internalModel?.settings || model?.internalModel?._settings;
@@ -111,14 +237,26 @@ export default function Maid() {
 		} catch {
 			// 忽略读取失败
 		}
-		const group = preferred.find((g) => groups.includes(g)) || groups[0];
-		if (!group) return;
+		if (!groups.length) return false;
+		// 1) 优先精确匹配常见命名
+		const exactPref = ['Idle', 'idle', 'IDLE', '待机', '待机动画', '待機'];
+		let group = exactPref.find((g) => groups.includes(g));
+		// 2) 若无精确命中，使用模糊匹配（包含 idle/待 机 的关键词）
+		if (!group) {
+			group = groups.find((g) => /idle|待机|待機/i.test(g));
+		}
+		// 3) 若仍未找到，则不要强行播放“第一个分组”的一遍动作（很多是 Click/Tap），避免播放完就静止
+		if (!group) return false;
 		try {
-			// v0.4.0 的正确用法：直接调用 model.motion(group)
+			// 先清空当前动作再进入待机，避免叠加造成状态异常
+			try { model?.internalModel?.motionManager?.stopAllMotions?.(); } catch (err) { void err; }
+			// v0.4.0：直接调用 model.motion(group)；Idle 通常为循环动作
 			await model.motion(group);
+			return true;
 		} catch (e) {
 			console.warn('启动待机动画失败', e);
 		}
+		return false;
 	};
 
 	// 拖拽相关
@@ -243,6 +381,12 @@ export default function Maid() {
 		appRef.current = app;
 		container.querySelector('.maid-canvas-wrap').appendChild(app.view);
 
+		// 初始化后加载默认模型
+		try {
+			void loadAndShowModel();
+			setOpenPanel('');
+		} catch (err) { void err; }
+
 
 		const onResize = () => fitAndPlace();
 		window.addEventListener('resize', onResize);
@@ -253,12 +397,16 @@ export default function Maid() {
 			window.removeEventListener('resize', onResize);
 			try {
 				// 仅从舞台移除当前模型
-				if (modelRef.current) {
+				if (modelRef.current && app && app.stage) {
 					try { app.stage.removeChild(modelRef.current); } catch (err) { void err; }
 				}
 			} catch (err) {
 				console.warn('卸载时销毁模型失败', err);
 			}
+			// 关闭每帧强制器
+			try { Ticker.shared.remove(enforcerFnRef.current); } catch { /* ignore */ }
+			enforcerOnRef.current = false;
+			compositeTargetRef.current = new Map();
 			try {
 				// 销毁所有缓存模型
 				cachedAtMount.forEach((m) => {
@@ -271,56 +419,75 @@ export default function Maid() {
 			} catch (err) {
 				console.warn('卸载时销毁应用失败', err);
 			}
+			// 清空引用，避免异步回调使用到已销毁的 app
+			appRef.current = null;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// 加载并显示指定索引的模型（依赖当前的 app 与路径）
-	const loadAndShowModel = async (indexToLoad) => {
+	const loadAndShowModel = async (path) => {
+		const cfgPath = path || getCurrentConfig().modelPath;
 		const app = appRef.current;
-		if (!app) return;
-		const paths = modelPaths.length ? modelPaths : [];
-		if (!paths.length) return;
-		const idx = ((indexToLoad ?? 0) % paths.length + paths.length) % paths.length;
-		const path = paths[idx];
+		// 在严格模式的双挂载/卸载场景下，可能出现 app 已销毁或 stage 为空的情况
+		if (!app || app.destroyed || !app.stage) return;
 		setLoading(true);
 		setError('');
 		try {
-			let model = preloadedRef.current.get(path);
+			// 如有旧模型，先从舞台移除，并主动释放资源（避免内存占用累积）
+			if (modelRef.current && app && app.stage) {
+				try { modelRef.current.autoUpdate = false; } catch (err) { void err; }
+				try { app.stage.removeChild(modelRef.current); } catch (err) { void err; }
+				try {
+					const oldPath = modelUrlRef.current;
+					// 仅在切换到不同模型时销毁并移除缓存
+					if (oldPath && oldPath !== cfgPath) {
+						try { modelRef.current.destroy(true); } catch (err) { void err; }
+						try { preloadedRef.current.delete(oldPath); } catch (err) { void err; }
+					}
+				} catch { /* ignore */ }
+			}
+
+			let model = preloadedRef.current.get(cfgPath);
 			if (!model) {
-				model = await Live2DModel.from(path, { autoInteract: false });
+				model = await Live2DModel.from(cfgPath, { autoInteract: false });
 				model.interactive = true;
 				if (model.anchor && typeof model.anchor.set === 'function') model.anchor.set(0, 0);
+				// 初次加载：开启自动更新
 				try { model.autoUpdate = true; } catch (err) { void err; }
-				preloadedRef.current.set(path, model);
-			}
-			// 从舞台移除旧模型
-			if (modelRef.current) {
-				try { app.stage.removeChild(modelRef.current); } catch (err) { void err; }
+				preloadedRef.current.set(cfgPath, model);
 			}
 			modelRef.current = model;
-			app.stage.addChild(model);
-			fitAndPlace();
-			startIdle(model);
-			// 初始化表情选择为第一项，并重置动作分组
+			modelUrlRef.current = cfgPath;
+			// 同步当前模型键（若匹配到配置项）
 			try {
-					const settings = model?.internalModel?.settings || model?.internalModel?._settings;
-					const expressions = settings?.expressions || settings?.Expressions || settings?._expressions || [];
-					if (expressions.length) {
-						// 跳过可能的“水印/sy”类表情
-						const pick = expressions.find((x) => {
-							const nm = (x?.Name || x?.name || '').toLowerCase();
-							const fp = (x?.File || x?.file || '').toLowerCase();
-							return !(/水印/.test(nm) || nm === 'sy' || fp.includes('sy') || /shuiyin/.test(fp));
-						}) || expressions[0];
-						const firstName = pick?.Name || pick?.name || '';
-						setSelectedExpression(firstName || '');
-					} else {
-						setSelectedExpression('');
-					}
-				const motions = settings?.motions || settings?.Motions || {};
-				const groups = motions ? Object.keys(motions) : [];
-				setActiveMotionGroup(groups[0] || '');
+				const found = Object.entries(modelConfigs).find(([, c]) => c.modelPath === cfgPath);
+				if (found) setCurrentModelKey(found[0]);
+			} catch { /* ignore */ }
+			if (app && app.stage) {
+				app.stage.addChild(model);
+			} else {
+				// 若 stage 不存在（可能因严格模式导致上一轮清理已销毁），中止后续流程
+				return;
+			}
+			// 确保当前显示的模型恢复更新
+			try { model.autoUpdate = true; } catch (err) { void err; }
+			fitAndPlace();
+			// 切换模型时，清空强制写参数器
+			try { Ticker.shared.remove(enforcerFnRef.current); } catch { /* ignore */ }
+			enforcerOnRef.current = false;
+			compositeTargetRef.current = new Map();
+			// 清空已缓存的表达式 JSON，避免跨模型缓存占用（按需可保留）
+			try { expJsonCacheRef.current = new Map(); } catch { /* ignore */ }
+			// 启动待机：智能匹配 Idle 分组，避免误触发一次性动作后静止
+			await startIdle(model);
+			// 初始化表情选择为预设表情列表的第一项，并重置动作分组
+			try {
+				const { emotionList } = getCategorizedExpressions();
+				setSelectedExpression(emotionList[0]?.name || '');
+				// 重置合成相关状态
+				setSelectedClothes([]);
+				setSelectedAction('');
+				setSelectedScene('');
 			} catch (err) { void err; }
 		} catch (e) {
 			console.error(e);
@@ -330,43 +497,129 @@ export default function Maid() {
 		}
 	};
 
-	// 当模型列表或索引变化时，加载对应模型
-	useEffect(() => {
-		if (!modelPaths.length) return;
-		loadAndShowModel(modelIndex);
-		// 关闭面板，避免切换时遮挡
-		setEmotionOpen(false);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [modelPaths, modelIndex]);
+	// 解析表达式 URL（相对 model3.json 目录）
+	const resolveExpressionUrl = useCallback((file) => {
+		const f = String(file || '').replace(/\\/g, '/');
+		if (/^https?:\/\//i.test(f) || f.startsWith('/')) return f;
+		const fallbackPath = (modelConfigs[currentModelKey] || modelConfigs[DEFAULT_CONFIG_KEY]).modelPath;
+		const modelUrl = modelUrlRef.current || fallbackPath;
+		const i = modelUrl.lastIndexOf('/');
+		const base = i >= 0 ? modelUrl.slice(0, i + 1) : '/';
+		return base + f;
+	}, [currentModelKey, modelConfigs, DEFAULT_CONFIG_KEY]);
 
-	// 加载模型清单（将 public/live2dmodels 下的所有 *.model3.json 导入）
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				const res = await fetch('/live2dmodels/manifest.json', { cache: 'no-cache' });
-				if (!res.ok) throw new Error('manifest 加载失败');
-				const data = await res.json();
-				if (cancelled) return;
-				const list = Array.isArray(data?.models) ? data.models : [];
-				if (list.length) {
-					setModelPaths(list);
-					setModelIndex(0);
-					return;
-				}
-				throw new Error('manifest 无模型');
-			} catch {
-				// 回退到内置的少量路径（兼容旧行为）
-				const fallback = [
-					'/live2dmodels/樱花狐/Bhuxian/Bhuxian.model3.json',
-					'/live2dmodels/applefox/A苹果小狐狸/A苹果小狐狸.model3.json',
-					'/live2dmodels/粉鼠团子/团子模型文件/团子出击/团子出击.model3.json',
-				];
-				if (!cancelled) setModelPaths(fallback);
+	// 获取表达式 JSON（带缓存）
+	const getExpressionJson = useCallback(async (file) => {
+		const url = resolveExpressionUrl(file);
+		const cache = expJsonCacheRef.current;
+		if (cache.has(url)) return cache.get(url);
+		const res = await fetch(url, { cache: 'no-cache' });
+		if (!res.ok) throw new Error(`加载表达式失败: ${url}`);
+		const json = await res.json();
+		cache.set(url, json);
+		return json;
+	}, [resolveExpressionUrl]);
+
+	const applyCompositeFromSelections = useCallback(async () => {
+		const model = modelRef.current;
+		if (!model) return;
+		const { clothesList, actionList, sceneList } = getCategorizedExpressions();
+		// 收集需要加载的表达式
+		const need = new Map(); // name -> {file, json}
+		const pushNeed = (list) => list.forEach((it) => it && need.set(it.name, { file: it.file, json: null }));
+		pushNeed(clothesList); pushNeed(actionList); pushNeed(sceneList);
+		// 批量加载
+		await Promise.all([...need.entries()].map(async ([, v]) => {
+			try { v.json = await getExpressionJson(v.file); } catch { v.json = null; }
+		}));
+		// 计算各类别参数全集
+		const getParamIds = (names) => {
+			const s = new Set();
+			names.forEach((n) => {
+				const j = need.get(n)?.json;
+				(j?.Parameters || j?.parameters || []).forEach((p) => { const id = p?.Id || p?.id; if (id) s.add(id); });
+			});
+			return s;
+		};
+		const clothesNames = clothesList.map(x => x.name);
+		const actionNames = actionList.map(x => x.name);
+		const sceneNames = sceneList.map(x => x.name);
+		const clothesParams = getParamIds(clothesNames);
+		const actionParams = getParamIds(actionNames);
+		const sceneParams = getParamIds(sceneNames);
+
+		// 目标参数值表
+		const target = new Map(); // id -> value
+		const setParamsFrom = () => (n) => {
+			const j = need.get(n)?.json; if (!j) return;
+			for (const p of (j.Parameters || j.parameters || [])) {
+				const id = p?.Id || p?.id; if (!id) continue;
+				const v = Number(p?.Value ?? p?.value ?? 0);
+				target.set(id, v);
 			}
-		})();
-		return () => { cancelled = true; };
-	}, []);
+		};
+
+		// 装扮：选中的写入值，未选中的置 0
+		selectedClothes.forEach(setParamsFrom());
+		clothesParams.forEach((id) => { if (!target.has(id)) target.set(id, 0); });
+
+		// 动作：仅保留所选动作参数，其它置 0
+		if (selectedAction) setParamsFrom()(selectedAction);
+		actionParams.forEach((id) => {
+			if (!selectedAction || !target.has(id)) target.set(id, 0);
+		});
+
+		// 场景：仅保留所选场景参数，其它置 0
+		if (selectedScene) setParamsFrom()(selectedScene);
+		sceneParams.forEach((id) => {
+			if (!selectedScene || !target.has(id)) target.set(id, 0);
+		});
+
+		// 更新目标表到 ref
+		compositeTargetRef.current = target;
+
+		// 没有任何可控参数：移除强制器并返回
+		if (!target.size) {
+			try { Ticker.shared.remove(enforcerFnRef.current); } catch { /* ignore */ }
+			enforcerOnRef.current = false;
+			return;
+		}
+
+		const composite = {
+			Type: 'Live2D Expression',
+			FadeInTime: 0.12,
+			FadeOutTime: 0.1,
+			Parameters: Array.from(target.entries()).map(([Id, Value]) => ({ Id, Value, Blend: 'Overwrite' })),
+		};
+		// 先尝试一次性应用表达式（如果底层支持，会由表达式系统维持）
+		try { await model.expression(composite); } catch { /* ignore */ }
+
+		// 启用每帧强制写入器，确保持久
+		if (!enforcerOnRef.current) {
+			const fn = () => {
+				try {
+					const m = modelRef.current; if (!m) return;
+					const core = m?.internalModel?.coreModel; if (!core) return;
+					for (const [id, v] of compositeTargetRef.current.entries()) {
+						try {
+							if (core.setParameterValueById) core.setParameterValueById(id, v);
+							else if (core.setParameterById) core.setParameterById(id, v);
+						} catch { /* ignore */ }
+					}
+				} catch { /* noop */ }
+			};
+			enforcerFnRef.current = fn;
+			try { Ticker.shared.add(fn); } catch { /* ignore */ }
+			enforcerOnRef.current = true;
+		}
+	}, [getCategorizedExpressions, getExpressionJson, selectedClothes, selectedAction, selectedScene]);
+
+	// 监听选择变化，立即应用合成，避免一次延后一拍
+	useEffect(() => {
+		void applyCompositeFromSelections();
+	}, [applyCompositeFromSelections, selectedClothes, selectedAction, selectedScene]);
+
+	// 已移除基于 manifest 的自动切换/加载，仅在初始化时加载默认模型
 
 	// 清晰度（渲染分辨率）动态调整
 	useEffect(() => {
@@ -390,14 +643,7 @@ export default function Maid() {
 		try { fitAndPlace(); } catch (e) { console.warn('根据大小倍率适配失败', e); }
 	}, [fitAndPlace]);
 
-	// 切换模型：按需加载并缓存
-	const handleSwitch = async () => {
-		if (!modelPaths.length) return;
-		if (loading) return; // 加载中暂不切换，避免拥塞
-		const next = (modelIndex + 1) % modelPaths.length;
-		setModelIndex(next);
-		// 加载与显示由上面 useEffect 处理
-	};
+	// 已移除切换模型逻辑（保留单模型）
 
 	// 表情选择改为“选择即应用”，无需单独的应用函数
 
@@ -405,7 +651,10 @@ export default function Maid() {
 	const toggleCollapsed = () => {
 		setCollapsed((prev) => {
 			const next = !prev;
-			if (next) setSettingsOpen(false);
+			if (next) {
+				setSettingsOpen(false);
+				setOpenPanel('');
+			}
 			return next;
 		});
 	};
@@ -420,7 +669,6 @@ export default function Maid() {
 	  <div
 	    ref={containerRef}
 	    className={`maid-widget maid-float${collapsed ? ' maid-collapsed' : ''}`}
-	    style={{ right: 20, bottom: 20 }}
 	  >
 	    <div className="maid-canvas-wrap" />
 
@@ -458,24 +706,49 @@ export default function Maid() {
 				</div>
 			)}
 
-			{/* 底部控制条：将“表情”按钮放到最左侧；仅点击显示列表 */}
+			{/* 底部控制条：表情/装扮/动作/场景 + 展开/设置 */}
 			<div className="maid-controlbar">
 				{(() => {
-					const disabled = getExpressions().length === 0;
-					return (
+					const { emotionList, clothesList, actionList, sceneList } = getCategorizedExpressions();
+					const mkBtn = (type, icon, title, disabled) => (
 						<button
-							className={`maid-iconbtn${emotionOpen ? ' maid-iconbtn-active' : ''}`}
-							title={disabled ? '当前模型未提供表情' : '表情列表'}
-							aria-label="表情列表"
-							aria-expanded={emotionOpen}
+							className={`maid-iconbtn${openPanel === type ? ' maid-iconbtn-active' : ''}`}
+							title={title}
+							aria-label={title}
+							aria-expanded={openPanel === type}
 							disabled={disabled}
-							onClick={() => setEmotionOpen((v) => !v)}
+							onClick={() => setOpenPanel((p) => (p === type ? '' : type))}
 						>
-							<img src="/icons/maid/emotion.svg" alt="表情" />
+							<img src={icon} alt={title} />
 						</button>
+					);
+					return (
+						<>
+							{mkBtn('emotion', '/icons/maid/emotion.svg', emotionList.length ? '表情' : '当前模型未提供表情', emotionList.length === 0)}
+							{mkBtn('clothes', '/icons/maid/clothes.svg', clothesList.length ? '装扮' : '当前模型未提供装扮', clothesList.length === 0)}
+							{mkBtn('action', '/icons/maid/action.svg', actionList.length ? '动作' : '当前模型未提供动作', actionList.length === 0)}
+							{mkBtn('scene', '/icons/maid/sence.svg', sceneList.length ? '场景' : '当前模型未提供场景', sceneList.length === 0)}
+						</>
 					);
 				})()}
 				{/* 已移除独立“动作”控件，动作列表合并在表情面板中 */}
+				<select
+					className="maid-select"
+					title="切换模型"
+					value={currentModelKey}
+					onChange={(e) => {
+						const key = e.target.value;
+						setOpenPanel('');
+						try { setCurrentModelKey(key); } catch { /* ignore */ }
+						const cfg = modelConfigs[key];
+						if (cfg && cfg.modelPath) { void loadAndShowModel(cfg.modelPath); }
+					}}
+					style={{ marginLeft: 6 }}
+				>
+					{Object.entries(modelConfigs).map(([key, cfg]) => (
+						<option key={key} value={key}>{cfg.label || key}</option>
+					))}
+				</select>
 				<button
 					className="maid-toggle"
 					aria-pressed={collapsed}
@@ -483,15 +756,6 @@ export default function Maid() {
 					title={collapsed ? '展开' : '收起'}
 				>
 					{collapsed ? '展开' : '收起'}
-				</button>
-				<button
-					className="maid-iconbtn"
-					onClick={handleSwitch}
-					title="切换模型"
-					aria-label="切换模型"
-					disabled={loading || !modelPaths.length}
-				>
-					<img src="/icons/maid/clothes.svg" alt="切换模型" />
 				</button>
 				<button
 					className={`maid-iconbtn${settingsOpen ? ' maid-iconbtn-active' : ''}`}
@@ -504,98 +768,111 @@ export default function Maid() {
 					<img src="/icons/maid/config.svg" alt="设置" />
 				</button>
 
-				{/* 当前模型序号指示 */}
-				<span className="maid-counter" aria-live="polite" title="当前模型序号">
-					{modelPaths.length ? `${modelIndex + 1}/${modelPaths.length}` : '0/0'}
-				</span>
+				{/* 单模型模式：无模型序号 */}
 			</div>
 
 			{(() => {
-				// 表情面板（已合并动作）：显示在画布左侧，包含“表情”和“动作”两部分
-				const exprs = getExpressions();
-				const motions = getMotions();
-				const exprDisabled = exprs.length === 0;
-				const motionDisabled = motions.length === 0;
-				if (collapsed || !emotionOpen || (exprDisabled && motionDisabled)) return null;
-				const groups = motions.map((g) => g.groupName);
-				const currentGroup = activeMotionGroup && groups.includes(activeMotionGroup) ? activeMotionGroup : (groups[0] || '');
-				const currentItems = motions.find((g) => g.groupName === currentGroup)?.items || [];
+				if (collapsed || !openPanel) return null;
+				const { emotionList, clothesList, actionList, sceneList } = getCategorizedExpressions();
+				let list = [];
+				let title = '';
+				switch (openPanel) {
+					case 'emotion':
+						title = '表情'; list = emotionList; break;
+					case 'clothes':
+						title = '装扮'; list = clothesList; break;
+					case 'action':
+						title = '动作'; list = actionList; break;
+					case 'scene':
+						title = '场景'; list = sceneList; break;
+					default: break;
+				}
+				if (!list.length) return null;
 				return (
-					<div className="maid-emotion-panel maid-emotion-panel-left" role="menu" aria-label="选择表情与动作">
-						{/* 表情区 */}
-						{!exprDisabled && (
-							<>
-								<div className="maid-section-title">表情</div>
-								<ul className="maid-emotion-list" role="listbox" aria-activedescendant={selectedExpression || undefined}>
-									{exprs.map((e) => (
-										<li key={e.name} role="option" aria-selected={selectedExpression === e.name}>
-											<button
-												type="button"
-												className={`maid-emotion-item${selectedExpression === e.name ? ' active' : ''}`}
-												onClick={async () => {
-													setSelectedExpression(e.name);
-													try {
-														const model = modelRef.current;
-														if (model) await model.expression(e.name);
-													} catch (err) {
-														console.warn('应用表情失败', err);
+					<div className="maid-emotion-panel maid-emotion-panel-left" role="menu" aria-label={`选择${title}`}>
+						<div className="maid-section-title">{title}</div>
+						<ul className="maid-emotion-list" role="listbox" aria-activedescendant={selectedExpression || undefined}>
+							{list.map((e) => {
+								let isActive = false;
+								switch (openPanel) {
+									case 'clothes': isActive = selectedClothes.includes(e.name); break;
+									case 'action': isActive = selectedAction === e.name; break;
+									case 'scene': isActive = selectedScene === e.name; break;
+									default: isActive = selectedExpression === e.name; break;
+								}
+
+								const handleClick = async () => {
+									const model = modelRef.current;
+									switch (openPanel) {
+										case 'clothes': {
+											setSelectedClothes((prev) => {
+												const exist = prev.includes(e.name);
+												const next = exist ? prev.filter(n => n !== e.name) : [...prev, e.name];
+												return next;
+											});
+											// 合成将在 selections 变化的 effect 中自动触发
+											break;
+										}
+										case 'action': {
+											// 允许再次点击取消，恢复默认（空选择）
+											if (selectedAction === e.name) {
+												setSelectedAction('');
+											} else {
+												setSelectedAction(e.name);
+											}
+											// 合成将在 selections 变化的 effect 中自动触发
+											setOpenPanel('');
+											break;
+										}
+										case 'scene': {
+											// 允许再次点击取消，恢复默认（空选择）
+											if (selectedScene === e.name) {
+												setSelectedScene('');
+											} else {
+												setSelectedScene(e.name);
+											}
+											// 合成将在 selections 变化的 effect 中自动触发
+											setOpenPanel('');
+											break;
+										}
+										default: {
+											// 表情：即时应用，不参与合成
+											setSelectedExpression(e.name);
+											try {
+												if (model) {
+													// 优先按已注册的表达式“名称”应用（model3.json -> Expressions）
+													await model.expression(e.name);
+												}
+											} catch {
+												// 兼容：如名称不可用，则回退为加载 JSON 后直接应用
+												try {
+													if (model) {
+														const json = await getExpressionJson(e.file);
+														await model.expression(json);
 													}
-													// 选择即应用并关闭面板
-													setEmotionOpen(false);
-												}}
-												title={`应用表情：${e.displayName || e.name}`}
-											>
-												{e.displayName || e.name}
-											</button>
-										</li>
-									))}
-								</ul>
-							</>
-						)}
-						{/* 动作区（合并） */}
-						{!motionDisabled && (
-							<>
-								<div className="maid-section-title">动作</div>
-								{groups.length > 1 && (
-									<div className="maid-motion-groups" role="tablist" aria-label="动作分组">
-										{groups.map((g) => (
-											<button
-												key={g}
-												className={`maid-tab${g === currentGroup ? ' active' : ''}`}
-												role="tab"
-												aria-selected={g === currentGroup}
-												onClick={() => setActiveMotionGroup(g)}
-												title={`分组：${g}`}
-											>
-												{g}
-											</button>
-										))}
-									</div>
-								)}
-								<ul className="maid-motion-list" role="listbox">
-									{currentItems.map((m, i) => (
-										<li key={`${currentGroup}-${i}`} role="option">
-											<button
-												className="maid-motion-item"
-												onClick={async () => {
-													try {
-														const model = modelRef.current;
-														if (model) await model.motion(currentGroup, i);
-													} catch (err) {
-														console.warn('播放动作失败', err);
-													}
-													// 选择后关闭面板
-													setEmotionOpen(false);
-											}}
-											title={`播放：${m.name || currentGroup + '-' + i}`}
-											>
-												{m.name || `${currentGroup}-${i}`}
-											</button>
-										</li>
-									))}
-								</ul>
-							</>
-						)}
+												} catch (err2) {
+													console.warn('应用表情失败', err2);
+												}
+											}
+											setOpenPanel('');
+										}
+									}
+								};
+
+								return (
+									<li key={e.name} role="option" aria-selected={isActive}>
+										<button
+											type="button"
+											className={`maid-emotion-item${isActive ? ' active' : ''}`}
+											onClick={handleClick}
+											title={`应用${title}：${e.displayName || e.name}`}
+										>
+											{e.displayName || e.name}
+										</button>
+									</li>
+								);
+							})}
+						</ul>
 					</div>
 				);
 			})()}

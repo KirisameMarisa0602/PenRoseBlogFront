@@ -29,23 +29,26 @@
 			]
 		},
 		"Expressions": [
-			{ "Name": "1爱心", "File": "1爱心.exp3.json" },
-			{ "Name": "1生气", "File": "1生气.exp3.json" },
-			{ "Name": "1流泪", "File": "1流泪.exp3.json" },
-			{ "Name": "1星星", "File": "1星星.exp3.json" },
-			{ "Name": "1脸红", "File": "1脸红.exp3.json" },
-			{ "Name": "1脸黑", "File": "1脸黑.exp3.json" },
-			{ "Name": "1钱钱", "File": "1钱钱.exp3.json" },
+		
+			{ "Name": "爱心", "File": "爱心.exp3.json" },
+			{ "Name": "生气", "File": "生气.exp3.json" },
+			{ "Name": "流泪", "File": "流泪.exp3.json" },
+			{ "Name": "星星", "File": "星星.exp3.json" },
+			{ "Name": "脸红", "File": "脸红.exp3.json" },
+			{ "Name": "脸黑", "File": "脸黑.exp3.json" },
+			{ "Name": "钱钱", "File": "钱钱.exp3.json" },
+
 			{ "Name": "背景1", "File": "背景1.exp3.json" },
 			{ "Name": "背景2", "File": "背景2.exp3.json" },
 			{ "Name": "背景3", "File": "背景3.exp3.json" },
+			
 			{ "Name": "宠物", "File": "宠物.exp3.json" },
-			{ "Name": "待机动作饰品_睫毛", "File": "睫毛.exp3.json" },
-			{ "Name": "口红", "File": "口红.exp3.json" },
-			{ "Name": "手势", "File": "手势.exp3.json" },
-			{ "Name": "头", "File": "头.exp3.json" },
 			{ "Name": "尾巴", "File": "尾巴.exp3.json" },
-			{ "Name": "棕发", "File": "棕发.exp3.json" }
+			{ "Name": "睫毛", "File": "睫毛.exp3.json" },
+			{ "Name": "棕发", "File": "棕发.exp3.json" },
+
+			{ "Name": "口红", "File": "口红.exp3.json" },
+			{ "Name": "手势", "File": "手势.exp3.json" }			
 		]
 	},
 	"Groups": [

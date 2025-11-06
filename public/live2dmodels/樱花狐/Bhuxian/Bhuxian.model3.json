@@ -19,6 +19,7 @@
 			]
 		},
 		"Expressions": [
+
 			{
 				"Name": "爱心眼",
 				"File": "爱心眼.exp3.json"
@@ -44,6 +45,15 @@
 				"File": "星星眼.exp3.json"
 			},
 			{
+				"Name": "歪嘴L",
+				"File": "手动歪嘴L.exp3.json"
+			},
+			{
+				"Name": "歪嘴R",
+				"File": "手动歪嘴R.exp3.json"
+			},
+
+			{
 				"Name": "小狐狸",
 				"File": "小狐狸.exp3.json"
 			},
@@ -51,6 +61,7 @@
 				"Name": "眼镜",
 				"File": "眼镜.exp3.json"
 			},
+			
 			{
 				"Name": "折扇闭",
 				"File": "折扇（闭）.exp3.json"
@@ -58,6 +69,11 @@
 			{
 				"Name": "折扇开",
 				"File": "折扇开.exp3.json"
+			},
+
+			{
+				"Name": "血迹",
+				"File": "血迹.exp3.json"
 			}
 		]
 	},

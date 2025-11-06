@@ -4,10 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "gen:live2d": "node scripts/generate-live2d-manifest.mjs",
-    "predev": "node scripts/generate-live2d-manifest.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/generate-live2d-manifest.mjs",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

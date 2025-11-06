@@ -2,8 +2,8 @@
 .maid-widget {
 	--maid-bar-h: 40px;
   position: fixed;
-  right: 0px;
-  bottom: 0px;
+	right: 20px;
+	bottom: 20px;
   width: 25vw;
   height: 50vh;
   background: transparent;
@@ -88,11 +88,7 @@
 	backdrop-filter: saturate(160%) blur(8px);
 }
 
-.maid-counter {
-	margin-left: auto;
-	font-size: 12px;
-	color: #57606a;
-}
+/* 已移除多模型切换计数器样式 */
 
 .maid-controls-label {
 	font-size: 12px;
@@ -129,7 +125,7 @@
 .maid-toggle:hover { background: #f6f8fa; transform: translateY(-1px); }
 .maid-toggle:active { transform: translateY(0); }
 
-/* 图标按钮：用于切换模型 */
+/* 通用图标按钮样式 */
 .maid-iconbtn {
 	height: 30px;
 	width: 38px;
@@ -179,16 +175,7 @@
 .maid-emotion-item.active { background: #ebf8f5; border-color: #9fe3d2; }
 /* 控件包裹元素不再需要 hover/pinned/suppress 行为，面板显示由渲染控制 */
 
-/* 动作选择面板（点击图标时显示） */
-.maid-motion-panel-right { display: none; }
-.maid-motion-groups { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-.maid-tab { padding: 4px 8px; border-radius: 6px; border: 1px solid #d0d7de; background: #fff; font-size: 12px; color: #24292f; }
-.maid-tab:hover { background: #f6f8fa; }
-.maid-tab.active { background: #ebf8f5; border-color: #9fe3d2; }
-.maid-motion-list { margin: 0; padding: 4px; list-style: none; max-height: 220px; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
-.maid-motion-item { width: 100%; text-align: left; padding: 6px 8px; border: 1px solid #d0d7de; background: #fff; border-radius: 6px; font-size: 12px; color: #24292f; transition: all .12s ease; }
-.maid-motion-item:hover { background: #f6f8fa; transform: translateY(-1px); }
-.maid-motion-item:active { transform: translateY(0); }
+/* 已移除旧动作用样式块（采用表情面板复用样式） */
 
 /* 面板内的分区标题 */
 .maid-section-title {

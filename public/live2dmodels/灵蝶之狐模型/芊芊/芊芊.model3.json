@@ -13,127 +13,131 @@
 		"DisplayInfo": "芊芊.cdi3.json",
 		"Expressions": [
 			{
-				"Name": "expression1",
+				"Name": "星星眼",
 				"File": "xingxingyan.exp3.json"
 			},
 			{
-				"Name": "expression2",
+				"Name": "脸红1",
 				"File": "lianhong.exp3.json"
 			},
 			{
-				"Name": "expression3",
+				"Name": "脸红2",
 				"File": "lianhong2.exp3.json"
 			},
 			{
-				"Name": "expression4",
+				"Name": "黑脸",
 				"File": "heilian.exp3.json"
 			},
 			{
-				"Name": "expression5",
+				"Name": "流泪",
 				"File": "yanlei.exp3.json"
 			},
 			{
-				"Name": "expression6",
-				"File": "yanzhu.exp3.json"
-			},
-			{
-				"Name": "expression7",
+				"Name": "问号1",
 				"File": "wenhao.exp3.json"
 			},
 			{
-				"Name": "expression8",
+				"Name": "问号2",
 				"File": "wenhao2.exp3.json"
 			},
 			{
-				"Name": "expression9",
+				"Name": "流汗",
 				"File": "liuhan.exp3.json"
 			},
 			{
-				"Name": "expression10",
+				"Name": "无语",
 				"File": "wuyu.exp3.json"
 			},
 			{
-				"Name": "expression11",
+				"Name": "钱钱",
 				"File": "qianyan.exp3.json"
 			},
 			{
-				"Name": "expression12",
+				"Name": "爱心眼",
 				"File": "aixinyan.exp3.json"
 			},
 			{
-				"Name": "expression13",
+				"Name": "轮回眼",
 				"File": "lunhuiyan.exp3.json"
 			},
 			{
-				"Name": "expression14",
+				"Name": "空白眼",
 				"File": "kongbaiyan.exp3.json"
 			},
 			{
-				"Name": "expression15",
-				"File": "tushe.exp3.json"
-			},
-			{
-				"Name": "expression16",
-				"File": "duzui.exp3.json"
-			},
-			{
-				"Name": "expression17",
-				"File": "guzui.exp3.json"
-			},
-			{
-				"Name": "expression18",
+				"Name": "星星",
 				"File": "xingxing.exp3.json"
 			},
 			{
-				"Name": "expression19",
+				"Name": "生气",
 				"File": "shengqi.exp3.json"
 			},
+
+
 			{
-				"Name": "expression20",
+				"Name": "眼珠",
+				"File": "yanzhu.exp3.json"
+			},
+			{
+				"Name": "长发",
 				"File": "changfa.exp3.json"
 			},
 			{
-				"Name": "expression21",
+				"Name": "双马尾",
 				"File": "shuangmawei.exp3.json"
 			},
 			{
-				"Name": "expression22",
+				"Name": "垂耳",
 				"File": "chuier.exp3.json"
 			},
 			{
-				"Name": "expression23",
+				"Name": "镜子",
 				"File": "jingzi.exp3.json"
 			},
 			{
-				"Name": "expression24",
+				"Name": "狐狸",
 				"File": "huli.exp3.json"
 			},
 			{
-				"Name": "expression25",
+				"Name": "拿笔",
 				"File": "bijiben.exp3.json"
 			},
 			{
-				"Name": "expression26",
+				"Name": "笔记本",
 				"File": "bijiben2.exp3.json"
 			},
+
+
 			{
-				"Name": "expression27",
+				"Name": "吐舌",
+				"File": "tushe.exp3.json"
+			},
+			{
+				"Name": "嘟嘴",
+				"File": "duzui.exp3.json"
+			},
+			{
+				"Name": "鼓嘴",
+				"File": "guzui.exp3.json"
+			},
+			{
+				"Name": "打游戏",
 				"File": "dayouxi.exp3.json"
 			},
 			{
-				"Name": "expression28",
+				"Name": "抱狐狸",
 				"File": "baohuli.exp3.json"
 			},
 			{
-				"Name": "expression29",
+				"Name": "扇子",
 				"File": "shanzi.exp3.json"
 			},
 			{
-				"Name": "expression30",
+				"Name": "话筒",
 				"File": "huatong.exp3.json"
 			},
 			{
-				"Name": "expression31",
+				"Name": "比心",
 				"File": "bixin.exp3.json"
 			}
 		]
