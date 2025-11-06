@@ -8,17 +8,56 @@ html, body, #root {
 body {
 	margin: 0;
 	font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-	background: radial-gradient(1200px 600px at 80% 20%, #f0f7ff 0%, #ffffff 60%),
-				linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+	/* Home 背景渐变色 */
+	background: linear-gradient(180deg, #f9fffe 0%, #f1fbf7 35%, #ffffff 100%);
+	/* 禁止横向滚动，杜绝任何元素偶发外溢引起的左右移动 */
+	overflow-x: hidden;
 }
 
 a { color: inherit; text-decoration: none; }
 
-.page-container {
-	max-width: 1080px;
-	margin: 0 auto;
-	padding: 48px 20px 96px; /* 给右下角看板娘留出空间 */
+/* 顶部导航：透明/半透明，滚动隐藏/显示 */
+.home-navbar {
+	position: fixed;
+	left: 0; right: 0; top: 0;
+	height: 10vh; /* 顶部导航占视窗高度的 10% */
+	z-index: 100;
+	transform: translateY(0);
+	transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease;
 }
+.home-navbar .nav-inner {
+	height: 100%;
+	max-width: 100vw;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 8px 0 12px; /* 左侧留出少量间距，避免贴边 */
+}
+.home-navbar.is-hidden { transform: translateY(-110%); }
+.home-navbar.is-transparent {
+	background-color: transparent;
+	box-shadow: none;
+}
+.home-navbar.is-translucent {
+	background-color: rgba(255, 255, 255, 0.7);
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+	box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+.nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1f6b5b; letter-spacing: .2px; }
+
+/* 欢迎区域：占满视窗 */
+.home-hero-full {
+	min-height: 100vh;
+	width: 100%; /* 用 100% 避免 100vw 在出现垂直滚动条时触发微小横向溢出 */
+	display: grid;
+	place-items: center;
+	padding: 5vh 10vw 5vh;
+}
+.hero-center { text-align: center; }
+.welcome-title { font-size: 34px; margin: 0 0 10px; color: #1f6b5b; }
+.welcome-subtitle { font-size: 16px; color: #537b77; margin: 0; }
 
 .hero-title {
 	font-size: 28px;
@@ -32,5 +71,14 @@ a { color: inherit; text-decoration: none; }
 	font-size: 15px;
 	color: #57606a;
 	margin: 0 0 24px;
+}
+
+/* 与欢迎区域同样大小的内容区域 */
+.home-content-full {
+	min-height: 100vh;
+	width: 100%;
+	display: grid;
+	place-items: center;
+	padding: 5vh 10vw 5vh;
 }
 

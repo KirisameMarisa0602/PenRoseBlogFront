@@ -1,0 +1,117 @@
+.penrose-logo {
+  display: inline-block;
+  position: relative;
+  line-height: 0;
+  /* 防止内部绝对定位的形状外溢导致页面产生横向滚动 */
+  overflow: hidden;
+}
+
+/* 缩放容器：把示例中的大尺寸形状整体缩小到导航高度 */
+.penrose-scale {
+  position: absolute;
+  inset: 0;
+  /* 放大到 0.25 并右移，确保图形完整显示且不贴边 */
+  transform: translateX(44px) scale(0.25);
+  transform-origin: top left;
+}
+
+/* 以下为示例 CSS 的“命名空间化”版本，避免与项目全局样式冲突 */
+.penrose-shell {
+  position: relative;
+  /* 去除示例中的大幅偏移，便于在小尺寸容器内对齐 */
+  top: 0;
+  left: 0;
+}
+
+.penrose-a,
+.penrose-b,
+.penrose-c {
+  position: absolute;
+  height: 300px;
+  width: 30px;
+  background-color: #333;
+  top: 49px;
+  left: 0;
+  transform: rotate(60deg) skew(30deg);
+}
+
+.penrose-b {
+  background-color: #aaa;
+  transform: rotate(180deg) skew(30deg);
+  left: 180px;
+  top: 36px;
+}
+
+.penrose-c {
+  background-color: #666;
+  transform: rotate(-60deg) skew(30deg);
+  left: 101px;
+  top: 199px;
+}
+
+.penrose-a::after,
+.penrose-b::after,
+.penrose-c::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 278px;
+  left: 165px;
+  top: -141px;
+  transform: rotate(-90deg) skew(0deg);
+  border-bottom: 23px solid transparent;
+  border-right: 20px solid #333;
+  transition: .5s;
+}
+
+.penrose-b::after { border-right: 20px solid #aaa; }
+.penrose-c::after { border-right: 20px solid #666; }
+
+.penrose-wrapper2 {
+  position: absolute;
+  transform: scale(0.5);
+  margin-left: 56px;
+  margin-top: 121px;
+}
+
+.penrose-wrapper3 {
+  position: absolute;
+  transform: scale(0.22);
+  margin-left: 88px;
+  margin-top: 188px;
+}
+
+.penrose-d,
+.penrose-e,
+.penrose-f {
+  position: absolute;
+  background-color: #333;
+  width: 130px;
+  height: 25px;
+  top: 270px;
+  left: -160px;
+  transform: rotate(60deg) skew(30deg);
+}
+
+.penrose-e {
+  background-color: #666;
+  top: 400px;
+  left: 173px;
+  transform: rotate(120deg) skew(30deg);
+}
+
+.penrose-f {
+  background-color: #aaa;
+  top: 35px;
+  left: 100px;
+  transform: rotate(180deg) skew(30deg);
+}
+
+/* 交互：通过类名控制（组件内定时展开/收回） */
+.penrose-shell.penrose-open .penrose-a::after,
+.penrose-shell.penrose-open .penrose-b::after,
+.penrose-shell.penrose-open .penrose-c::after {
+  height: 290px;
+  top: 31px;
+  left: 76px;
+}

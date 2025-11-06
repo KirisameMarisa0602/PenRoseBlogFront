@@ -880,7 +880,7 @@ export default function Maid() {
 	    {loading && (
 	    	<div className="maid-loading-overlay" aria-busy="true">
 	    		<div className="maid-spinner" />
-	    		<div className="maid-loading-text">模型加载中…</div>
+	    		<div className="maid-loading-text">看板娘正在赶来…</div>
 	    	</div>
 	    )}
 	    {error && <div className="maid-error">{error}</div>}
