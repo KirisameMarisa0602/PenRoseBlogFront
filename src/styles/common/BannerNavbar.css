@@ -9,67 +9,114 @@
   user-select: none;
   z-index: 0; /* 置于 nav-inner 背后 */
 }
-.home-navbar, .banner-navbar { position: fixed; }
-.home-navbar .nav-inner, .banner-navbar .nav-inner { position: relative; z-index: 2; }
-.home-navbar, .banner-navbar {
+.banner-navbar { position: fixed; }
+.banner-navbar .nav-inner { position: relative; z-index: 2; }
+.banner-navbar {
   position: fixed;
   top: 0; left: 0;
   width: 100vw;
-  height: 15vh;
+  /* 对齐参考 index.css 高度行为 */
+  min-height: 155px;
+  height: 10vw;
+  max-height: 240px;
   z-index: 100;
   transform: translateY(0);
   transition: transform .2s ease;
   background-color: transparent;
+  margin: 0;
 }
-.home-navbar .nav-inner, .banner-navbar .nav-inner {
+.banner-navbar .nav-inner {
   height: 100%;
   width: 100%;
   margin: 0;
   display: grid;
   grid-template-columns: 12.5vw 1fr;
   align-items: center;
-  padding: 0 2vw;
+  padding: 0; /* 不留边距 */
 }
-.home-navbar.is-hidden, .banner-navbar.is-hidden { transform: translateY(-110%); }
+.banner-navbar.is-hidden { transform: translateY(-110%); }
 .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1f6b5b; letter-spacing: .2px; }
 .nav-brand { grid-column: 1 / 2; height: 100%; }
 .nav-brand > * { max-height: 80%; width: auto; display: block; }
-.bili-banner .bili-layer {
-  position: absolute;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  display: block; /* 避免 flex 拉伸导致变形 */
-  overflow: hidden; /* 每层也裁剪，防止平移露边 */
+.bili-banner .bili-layer { position: absolute; left:0; top:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+.bili-banner .bili-media { -webkit-user-select:none; user-select:none; pointer-events:none; }
+
+/* --- Penrose Logo（并入导航样式） --- */
+.banner-navbar .nav-brand .penrose-logo {
+  display: inline-block;
+  position: relative;
+  line-height: 0;
+  overflow: visible;
+  height: 60%; /* 依据 18vh 导航高度自适应，约 10.8vh */
+  aspect-ratio: 1 / 1;
+  will-change: transform; /* 避免鼠标交互时抖动 */
+  transform: translateZ(0);
 }
-.bili-banner .bili-media {
+.banner-navbar .nav-brand .penrose-scale {
   position: absolute;
-  top: 0;
-  left: 50%; /* 默认水平居中 */
-  transform: translateX(-50%);
-  height: 100%;
-  width: auto; /* 高度贴合容器，保持比例 */
-  max-width: 100%; /* 不超过容器宽，避免溢出 */
-  object-fit: contain; /* 若宽度不足则留边，不拉伸 */
-  object-position: center center;
-  pointer-events: none;
-  -webkit-user-select: none;
-  user-select: none;
+  inset: 0;
+  /* 去除过大的右移，直接按比例缩放到容器内 */
+  transform: translateX(5vw) scale(0.25);
+  transform-origin: top left;
 }
+.banner-navbar .penrose-shell { position: relative; top: 0; left: 0; }
+.banner-navbar .penrose-a,
+.banner-navbar .penrose-b,
+.banner-navbar .penrose-c {
+  position: absolute;
+  height: 300px;
+  width: 30px;
+  background-color: #333;
+  top: 49px;
+  left: 0;
+  transform: rotate(60deg) skew(30deg);
+}
+.banner-navbar .penrose-b { background-color: #aaa; transform: rotate(180deg) skew(30deg); left: 180px; top: 36px; }
+.banner-navbar .penrose-c { background-color: #666; transform: rotate(-60deg) skew(30deg); left: 101px; top: 199px; }
+.banner-navbar .penrose-a::after,
+.banner-navbar .penrose-b::after,
+.banner-navbar .penrose-c::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 278px;
+  left: 165px;
+  top: -141px;
+  transform: rotate(-90deg) skew(0deg);
+  border-bottom: 23px solid transparent;
+  border-right: 20px solid #333;
+  transition: .5s;
+}
+.banner-navbar .penrose-b::after { border-right: 20px solid #aaa; }
+.banner-navbar .penrose-c::after { border-right: 20px solid #666; }
+.banner-navbar .penrose-logo:hover .penrose-a::after,
+.banner-navbar .penrose-logo:hover .penrose-b::after,
+.banner-navbar .penrose-logo:hover .penrose-c::after {
+  height: 290px;
+  top: 31px;
+  left: 76px;
+}
+.banner-navbar .penrose-wrapper2 { position: absolute; transform: scale(0.5); margin-left: 56px; margin-top: 121px; }
+.banner-navbar .penrose-wrapper3 { position: absolute; transform: scale(0.22); margin-left: 88px; margin-top: 188px; }
+.banner-navbar .penrose-d,
+.banner-navbar .penrose-e,
+.banner-navbar .penrose-f {
+  position: absolute;
+  background-color: #333;
+  width: 130px;
+  height: 25px;
+  top: 270px;
+  left: -160px;
+  transform: rotate(60deg) skew(30deg);
+}
+.banner-navbar .penrose-e { background-color: #666; top: 400px; left: 173px; transform: rotate(120deg) skew(30deg); }
+.banner-navbar .penrose-f { background-color: #aaa; top: 35px; left: 100px; transform: rotate(180deg) skew(30deg); }
 
 /* 层次淡入（可选） */
 /* 移除通用过渡，保持零风格干预，由主题 data.json 决定效果 */
 /* .bili-banner .bili-layer { transition: transform .08s linear; } */
 
-/* 背景底层：铺满并裁剪（cover），保证横向铺满 */
-.bili-banner .bili-layer:first-child .bili-media {
-  left: 0;
-  transform: none;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  object-fit: cover;
-  object-position: 50% 50%;
-}
+/* 删除首层 CSS 覆盖策略，改由 JS 计算宽高进行 overscan，保持与参考项目一致的“按像素尺寸居中” */
 
 /* BannerNavbar 特有的前景层：放导航内容，不被背景阻挡 */
 .banner-navbar .nav-inner { position: relative; z-index: 2; }
@@ -88,3 +135,42 @@
   backdrop-filter: blur(4px);
   pointer-events: none;
 }
+
+/* -------- Example banners (spring/autumn/winter) scoped styles -------- */
+.example-banner { position:absolute; inset:0; overflow:hidden; pointer-events:auto; }
+.bili-banner .example-host { position:absolute; inset:0; pointer-events:auto; }
+
+/* Spring */
+.example-spring .view { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.example-spring .view:nth-of-type(1)> img { width:5612px; height:209px; transform: scale(1) translate(0px, -17.4194px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(2)> img { width:5612px; height:209px; transform: scale(1) translate(1277.42px, 0px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(3)> img { width:1841px; height:188px; transform: scale(1) translate(783.871px, 0px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(4)> img { width:1671px; height:204px; transform: scale(1) translate(-739.742px, 0px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(5)> img { width:290px; height:72px; transform: scale(1) translate(705.484px, 52.2581px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(6)> img { width:238px; height:98px; transform: scale(1) translate(292.645px, 42.271px) rotate(0deg); opacity:0; }
+.example-spring .view:nth-of-type(7)> img { width:1428px; height:146px; transform: scale(1) translate(130.065px, 16.2581px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(8)> img { width:1428px; height:94px; transform: scale(1) translate(-406.452px, 56.9032px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(9)> img { width:230px; height:160px; transform: scale(1) translate(-278.71px, 18.5806px) rotate(0deg); opacity:0; }
+.example-spring .view:nth-of-type(10)> img { width:67px; height:118px; transform: scale(1) translate(-394.839px, 37.1613px) rotate(0deg); opacity:0; }
+.example-spring .view:nth-of-type(11)> img { width:314px; height:132px; transform: scale(1) translate(-104.516px, 15.6774px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(12)> img { width:2483px; height:209px; transform: scale(1) translate(116.129px, 0px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(13)> img { width:487px; height:170px; transform: scale(1) translate(250.839px, 15.6774px) rotate(0deg); opacity:1; }
+.example-spring .view:nth-of-type(14)> img { width:515px; height:245px; transform: scale(1) translate(2438.71px, 0px) rotate(0deg); filter: blur(2px); opacity:1; }
+.example-spring .view:nth-of-type(15)> img { width:1112px; height:209px; transform: scale(1) translate(-1161.29px, 0px) rotate(0deg); filter: blur(1px); opacity:1; }
+
+/* Autumn */
+.example-autumn { position:absolute; inset:0; }
+.example-autumn > div { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; --offset:0px; --blur:2px; }
+.example-autumn > div > img { display:block; width:110%; height:100%; object-fit:cover; transform: translateX(var(--offset)); filter: blur(var(--blur)); }
+
+/* Winter */
+.example-winter { position:absolute; inset:0; --percentage:0.5; }
+.example-winter .view, .example-winter .tree { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; }
+.example-winter img, .example-winter video { position:absolute; display:block; width:120%; height:100%; object-fit:cover; }
+.example-winter .morning { z-index:20; opacity: calc(1 - (var(--percentage) - 0.25) / 0.25); }
+.example-winter .afternoon { z-index:10; opacity: calc(1 - (var(--percentage) - 0.5) / 0.5); }
+.example-winter .view { transform: translateX(calc(var(--percentage) * 100px)); }
+.example-winter .tree { transform: translateX(calc(var(--percentage) * 50px)); filter: blur(3px); }
+.example-winter .view, .example-winter .tree, .example-winter .morning, .example-winter .afternoon { transition:.2s all ease-in; }
+.example-winter.moving .view, .example-winter.moving .tree, .example-winter.moving .morning, .example-winter.moving .afternoon { transition:none; }
+.example-winter .window-cover { opacity: calc((var(--percentage) - 0.9) / 0.1); }

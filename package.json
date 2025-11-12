@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "banner:grab": "node src/utils/bannergrab/grab.cjs",
+    "banner:manifest": "node src/utils/bannergrab/build-manifest.cjs"
   },
   "dependencies": {
     "axios": "^1.13.1",
