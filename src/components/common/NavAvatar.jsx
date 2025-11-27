@@ -1,5 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import AvatarDropdown from './AvatarDropdown';
+import { useAuthState } from '../../hooks/useAuthState';
 
 /**
  * 导航栏右上角头像/入口组件 NavAvatar
@@ -10,12 +12,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
  * 样式：src/styles/common/NavAvatar.css 仅通过类名切换，不在此写内联样式
  */
 export default function NavAvatar({
-  isLoggedIn = false,
-  avatarUrl = '',
   size, // 可选：覆盖尺寸 CSS 变量 --size
   alt = '用户头像',
-  onClick, 
+  onClick,
 }) {
+  // 集成全局用户信息
+  const { isLoggedIn, user, logout } = useAuthState();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,10 +34,10 @@ export default function NavAvatar({
 
   // 已登录但没有头像时随机挑选（首次渲染稳定）
   const randomFallback = useMemo(() => {
-    if (!isLoggedIn || avatarUrl) return '';
+    if (!isLoggedIn || (user && user.avatar)) return '';
     const idx = Math.floor(Math.random() * fallbackList.length);
     return `/icons/avatar_no_sign_in/${fallbackList[idx]}`;
-  }, [isLoggedIn, avatarUrl, fallbackList]);
+  }, [isLoggedIn, user, fallbackList]);
 
   // ===== 用户资料（昵称 / 用户ID / 性别）读取 =====
   // 下拉面板已移除，这些资料在头像处暂未展示，预留以后扩展时再启用
@@ -66,34 +68,56 @@ export default function NavAvatar({
     navigate('/selfspace');
   };
 
+
+  // 下拉面板显示控制
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // 鼠标是否在下拉菜单上
+  const [dropdownHover, setDropdownHover] = useState(false);
+
   // 状态类名
   const stateClass = !isLoggedIn
     ? 'nav-avatar--guest'
-    : avatarUrl
+    : user && user.avatar
       ? 'nav-avatar--withavatar'
       : 'nav-avatar--noavatar';
 
   return (
     <div
       className={`nav-avatar ${stateClass}`}
-      style={style}
+      style={{...style, position: 'relative'}}
       role="button"
       tabIndex={0}
       aria-label={alt}
       onClick={handleClick}
       onKeyDown={handleKey}
+      onMouseEnter={() => isLoggedIn && setDropdownOpen(true)}
+      onMouseLeave={() => isLoggedIn && !dropdownHover && setDropdownOpen(false)}
     >
       {/* 未登录 CTA */}
       {!isLoggedIn && (
         <div className="nav-avatar__cta">去登录 / 注册</div>
       )}
       {/* 有头像 */}
-      {isLoggedIn && avatarUrl && (
-        <img className="nav-avatar__img" src={avatarUrl} alt={alt} draggable={false} />
+      {isLoggedIn && user && user.avatar && (
+        <img className="nav-avatar__img" src={user.avatar} alt={alt} draggable={false} />
       )}
       {/* 无头像占位随机图 */}
-      {isLoggedIn && !avatarUrl && randomFallback && (
+      {isLoggedIn && (!user || !user.avatar) && randomFallback && (
         <img className="nav-avatar__img" src={randomFallback} alt="占位头像" draggable={false} />
+      )}
+      {/* 下拉面板 */}
+      {isLoggedIn && dropdownOpen && user && (
+        <div
+          onMouseEnter={() => setDropdownHover(true)}
+          onMouseLeave={() => {
+            setDropdownHover(false);
+            setDropdownOpen(false);
+          }}
+          onClick={e => e.stopPropagation()}
+          style={{position: 'absolute', top: '100%', right: 0, zIndex: 10000}}
+        >
+          <AvatarDropdown user={user} onLogout={logout} />
+        </div>
       )}
     </div>
   );

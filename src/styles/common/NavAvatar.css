@@ -1,4 +1,22 @@
-.nav-avatar{--size:clamp(36px,4.5vw,64px);position:relative;width:var(--size);height:var(--size);border-radius:50%;/*overflow:hidden;*/justify-self:end;align-self:center;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2f7,#dbe2ea);border:2px solid rgba(255,255,255,.65);box-shadow:0 2px 8px rgba(0,0,0,.12);cursor:default;transition-property:box-shadow,transform,width,height;transition-duration:.25s,.25s,0s,0s;}
+.nav-avatar {
+    --size: clamp(4vw, 5vw, 6vw);
+    position: relative;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    /*overflow:hidden;*/
+    justify-self: end;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #eef2f7, #dbe2ea);
+    border: 2px solid rgba(255,255,255,.65);
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    cursor: default;
+    transition-property: box-shadow, transform, width, height;
+    transition-duration: .25s, .25s, 0s, 0s;
+}
 .nav-avatar:active{transform:scale(.94)}
 .nav-avatar[role="button"]{cursor:pointer}
 .nav-avatar__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
@@ -23,6 +41,6 @@
 /* 登录状态下：悬停时轻微放大头像，增加交互感 */
 .nav-avatar.nav-avatar--withavatar:hover,
 .nav-avatar.nav-avatar--noavatar:hover{
-    transform: scale(1.75);
+    transform: scale(1.5);
 }
 

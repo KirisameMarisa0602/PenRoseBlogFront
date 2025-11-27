@@ -346,6 +346,16 @@ export default function BannerNavbar({ bannerId, children }) {
         </div>
         <div className="nav-actions">
           {children}
+          <a
+            href="/edit-blog"
+            className="nav-edit-blog-btn"
+            onClick={e => {
+              e.preventDefault();
+              window.location.href = '/edit-blog';
+            }}
+          >
+            编辑文章
+          </a>
           <NavAvatar isLoggedIn={isLoggedIn} avatarUrl={avatarUrl} />
         </div>
       </div>

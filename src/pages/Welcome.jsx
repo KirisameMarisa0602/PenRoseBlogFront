@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 import '../styles/welcome/Welcome.css';
 
 export default function Welcome() {
@@ -54,9 +56,39 @@ export default function Welcome() {
       setMessage(res.data.msg);
       setMessageType(res.data.code === 200 ? 'success' : 'error');
       if (res.data.code === 200 && res.data.data) {
-        localStorage.setItem('token', res.data.data);
-        // 若后端返回头像地址，可在此一并存储，例如：res.data.avatarUrl
-        // if (res.data.avatarUrl) localStorage.setItem('avatarUrl', res.data.avatarUrl);
+        let token = res.data.data;
+        if (typeof token === 'object' && token !== null && token.token) {
+          token = token.token;
+        }
+        localStorage.setItem('token', token);
+
+        // 解析 userId（假设JWT里有userId、id或sub字段）
+        let userId = null;
+        try {
+          const payload = jwtDecode(token);
+          userId = payload.userId || payload.id || payload.sub || null;
+        } catch {
+          // 解析失败
+        }
+
+        // 拉取用户详细信息
+        if (userId) {
+          try {
+            const profileRes = await axios.get(`/api/user/profile/${userId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (profileRes.data && profileRes.data.data) {
+              const profile = profileRes.data.data;
+              localStorage.setItem('nickname', profile.nickname || '');
+              localStorage.setItem('avatarUrl', profile.avatarUrl || '');
+              localStorage.setItem('backgroundUrl', profile.backgroundUrl || '');
+              localStorage.setItem('gender', profile.gender || '');
+            }
+          } catch {
+            // 获取用户信息失败，忽略
+          }
+        }
+
         // 通知应用内其他组件刷新登录态
         window.dispatchEvent(new Event('auth-changed'));
         if (rememberMe) {

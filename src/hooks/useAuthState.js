@@ -8,15 +8,26 @@ import { useEffect, useState } from 'react';
 export function useAuthState() {
   const read = () => {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
-    const avatarUrl = typeof localStorage !== 'undefined' ? (localStorage.getItem('avatarUrl') || '') : '';
-    return { isLoggedIn: !!token, avatarUrl };
+    const avatar = typeof localStorage !== 'undefined' ? (localStorage.getItem('avatarUrl') || '') : '';
+    const nickname = typeof localStorage !== 'undefined' ? (localStorage.getItem('nickname') || '') : '';
+    const gender = typeof localStorage !== 'undefined' ? (localStorage.getItem('gender') || 'other') : 'other';
+    const backgroundUrl = typeof localStorage !== 'undefined' ? (localStorage.getItem('backgroundUrl') || '') : '';
+    return {
+      isLoggedIn: !!token,
+      user: {
+        avatar,
+        nickname,
+        gender,
+        backgroundUrl,
+      },
+    };
   };
 
-  const [{ isLoggedIn, avatarUrl }, setState] = useState(read);
+  const [{ isLoggedIn, user }, setState] = useState(read);
 
   useEffect(() => {
     const onStorage = (e) => {
-      if (!e || (e.key !== null && e.key !== 'token' && e.key !== 'avatarUrl')) return;
+      if (!e || (e.key !== null && !['token', 'avatarUrl', 'nickname', 'gender', 'backgroundUrl'].includes(e.key))) return;
       setState(read());
     };
     const onAuthChanged = () => setState(read());
@@ -28,5 +39,17 @@ export function useAuthState() {
     };
   }, []);
 
-  return { isLoggedIn, avatarUrl };
+  // 退出登录
+  const logout = () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('avatarUrl');
+      localStorage.removeItem('nickname');
+      localStorage.removeItem('gender');
+      localStorage.removeItem('backgroundUrl');
+    }
+    window.dispatchEvent(new Event('auth-changed'));
+  };
+
+  return { isLoggedIn, user, logout };
 }
