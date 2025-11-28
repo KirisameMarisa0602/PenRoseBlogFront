@@ -61,8 +61,22 @@ export default function ArticleDetailPage() {
       setMsg("评论成功");
       setComment("");
       fetch(`/api/blogpost/${id}/comments`).then(res => res.json()).then(data => {
-        if ((data.code === 200 || data.status === 200) && data.data) setComments(data.data);
+        if ((data.code === 200 || data.status === 200) && data.data) {
+          if (Array.isArray(data.data)) {
+            setComments(data.data);
+          } else if (Array.isArray(data.data.list)) {
+            setComments(data.data.list);
+          } else {
+            setComments([]);
+          }
+        } else {
+          setComments([]);
+        }
       });
+      // 新增：评论成功后自动刷新页面
+      setTimeout(() => {
+        window.location.reload();
+      }, 800); // 800ms后刷新，确保提示能显示
     } else {
       setMsg(data.msg || "评论失败");
     }
@@ -77,7 +91,20 @@ export default function ArticleDetailPage() {
       {article.coverImageUrl && <img src={article.coverImageUrl} alt="cover" style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 18 }} />}
       <div style={{ fontSize: 18, color: '#222', marginBottom: 24, whiteSpace: 'pre-wrap' }}>{article.content}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-        <button onClick={handleLike} style={{ background: liked ? '#0a7' : '#eee', color: liked ? '#fff' : '#333', border: 'none', borderRadius: 4, padding: '6px 18px', fontSize: 16, cursor: 'pointer' }}>{liked ? '已点赞' : '点赞'} ({likeCount})</button>
+        <button
+          onClick={handleLike}
+          style={{
+            background: liked ? '#0a7' : '#eee',
+            color: liked ? '#fff' : '#333',
+            border: 'none',
+            borderRadius: 4,
+            padding: '6px 18px',
+            fontSize: 16,
+            cursor: 'pointer'
+          }}
+        >
+          {liked ? '已点赞' : '点赞'} ({likeCount})
+        </button>
       </div>
       <h3 style={{ marginBottom: 12 }}>评论</h3>
       <form onSubmit={handleComment} style={{ marginBottom: 18 }}>
@@ -98,4 +125,3 @@ export default function ArticleDetailPage() {
     </div>
   );
 }
-
