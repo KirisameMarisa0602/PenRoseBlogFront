@@ -53,13 +53,51 @@
   height: var(--navH);
   width: 100%;
   display: grid;
-  /* 整体 8 等分：左 1/8 为品牌，右 7/8 为动作区 */
+  /* 整体 8 等分：左 1/8 为品牌，右 6/8 为动作区，中间1格编辑按钮，最右1格头像 */
   grid-template-columns: repeat(8, 1fr);
   align-items: stretch;
-  padding: 0; /* 无内边距 */
-  column-gap: 0; /* 无列间距 */
-  row-gap: 0;    /* 无行间距 */
+  padding: 0;
+  column-gap: 0;
+  row-gap: 0;
 }
+
+/* nav-brand 依然在第1格 */
+.nav-brand {
+  grid-column: 1 / 2;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  margin: 0; padding: 0; box-sizing: border-box;
+  --cell: min(var(--navH), calc(100vw / 8));
+}
+
+/* 编辑按钮单独一格（第7格） */
+.nav-edit-cell {
+  grid-column: 7 / 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.nav-edit-blog-btn {
+  margin: 0;
+  align-self: center;
+  justify-self: center;
+}
+
+/* 头像单独一格（第8格） */
+.nav-avatar-cell {
+  grid-column: 8 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.nav-avatar {
+  margin: 0;
+}
+
+/* 移除原 nav-actions 区域的右侧布局（如有） */
 .banner-navbar.is-hidden { transform: translateY(-110%); }
 
 /* 左侧 1/8 容器与 Logo：严格居中、无空隙 */
@@ -203,3 +241,23 @@
 
 /* 头像：最右一列，垂直居中对齐 */
 .banner-navbar .nav-actions .nav-avatar { grid-column: 7; grid-row: 1; justify-self: center; align-self: center; }
+/* 导航菜单项样式优化 */
+.nav-menu-cell .nav-link {
+  font-weight: 700;
+  color: #1a2233;
+  font-size: 17px;
+  letter-spacing: 0.5px;
+  padding: 6px 18px;
+  border-radius: 6px;
+  background: none;
+  text-decoration: none;
+  transition: color 0.18s, background 0.18s;
+  margin: 0 2px;
+  display: inline-block;
+  line-height: 1.2;
+}
+.nav-menu-cell .nav-link:hover, .nav-menu-cell .nav-link:focus {
+  color: #fff;
+  background: #1a2233;
+  text-decoration: none;
+}

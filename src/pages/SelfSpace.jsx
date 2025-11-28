@@ -2,6 +2,7 @@ import React from 'react';
 import '../styles/selfspace/SelfSpace.css';
 import SelfspaceProfileAccordion from '../components/selfspace/SelfspaceProfileAccordion/SelfspaceProfileAccordion.jsx';
 import BannerNavbar from '../components/common/BannerNavbar.jsx';
+import ProfileEditPanel from '../components/selfspace/ProfileEditPanel.jsx';
 
 // SelfSpace 页面：左侧 25vw 手风琴资料面板 + 右侧内容区域
 export default function SelfSpace() {
@@ -16,7 +17,7 @@ export default function SelfSpace() {
         </aside>
 
         <main className="selfspace-right-panel" aria-label="个人空间内容区">
-          {/* 这里放自空间的主要内容模块 */}
+          <ProfileEditPanel />
         </main>
       </div>
     </>

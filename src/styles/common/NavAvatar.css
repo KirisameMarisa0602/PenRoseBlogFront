@@ -1,5 +1,5 @@
 .nav-avatar {
-    --size: clamp(4vw, 5vw, 6vw);
+    --size: clamp(3vw, 4vw, 5vw);
     position: relative;
     width: var(--size);
     height: var(--size);

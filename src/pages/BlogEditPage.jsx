@@ -13,6 +13,7 @@ export default function BlogEditPage() {
   const [directory, setDirectory] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(false);
 
   // 编辑模式下加载原博客内容
   useEffect(() => {
@@ -21,7 +22,7 @@ export default function BlogEditPage() {
       fetch(`/api/blogpost/${blogId}`)
         .then(res => res.json())
         .then(data => {
-          if (data.code === 200 && data.data) {
+          if ((data.code === 200 || data.status === 200) && data.data) {
             setTitle(data.data.title || "");
             setContent(data.data.content || "");
             setCover(data.data.coverImageUrl || "");
@@ -49,7 +50,6 @@ export default function BlogEditPage() {
       title,
       content,
       coverImageUrl: cover,
-      cover, // 兼容后端cover字段
       directory,
       userId, // 新建时需要，编辑时可选
     };
@@ -72,9 +72,12 @@ export default function BlogEditPage() {
         });
       }
       data = await resp.json();
-      if (data.code === 200) {
-        setMsg("保存成功");
-        // 可选：跳转到详情页或清空表单
+      if (data.code === 200 || data.status === 200) {
+        setMsg("保存成功，博客已写入数据库");
+        setTitle("");
+        setContent("");
+        setCover("");
+        setDirectory("");
       } else {
         setMsg(data.msg || "保存失败");
       }
@@ -86,61 +89,83 @@ export default function BlogEditPage() {
 
   return (
     <div style={{
-      maxWidth: 600,
-      margin: "32px auto",
-      background: "#fff",
-      borderRadius: 8,
-      boxShadow: "0 2px 12px #0001",
-      padding: 32
+      maxWidth: 700,
+      margin: "40px auto",
+      background: "#f8f9fa",
+      borderRadius: 12,
+      boxShadow: "0 4px 24px #0002",
+      padding: 36,
+      fontFamily: 'Segoe UI',
+      position: 'relative'
     }}>
-      <h2 style={{ textAlign: "center", marginBottom: 24 }}>
+      <h2 style={{ textAlign: "center", marginBottom: 28, color: '#222', letterSpacing: 2 }}>
         {blogId ? "编辑博客文章" : "新建博客文章"}
       </h2>
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", marginBottom: 6 }}>标题 *</label>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>标题 *</label>
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+            style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #bbb", fontSize: 16, background: '#fff', color: '#222', zIndex: 1, opacity: 1 }}
             placeholder="请输入标题"
             disabled={loading}
           />
         </div>
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", marginBottom: 6 }}>正文内容 *</label>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>正文内容 *</label>
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            style={{ width: "100%", height: 140, padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+            style={{ width: "100%", height: 180, padding: 10, borderRadius: 6, border: "1px solid #bbb", fontSize: 15, background: '#fff', color: '#222', resize: 'vertical', zIndex: 1, opacity: 1 }}
             placeholder="请输入正文内容"
             disabled={loading}
           />
         </div>
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", marginBottom: 6 }}>封面URL</label>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>封面图片URL</label>
           <input
             type="text"
             value={cover}
             onChange={e => setCover(e.target.value)}
-            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+            style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #bbb", fontSize: 15, background: '#fff' }}
             placeholder="可选 http/https 图片链接"
             disabled={loading}
           />
+          {cover && cover.startsWith('http') && (
+            <img src={cover} alt="cover" style={{ marginTop: 10, maxWidth: '100%', borderRadius: 8, boxShadow: '0 2px 8px #0001' }} />
+          )}
         </div>
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", marginBottom: 6 }}>目录 (directory)</label>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>目录 (directory)</label>
           <input
             type="text"
             value={directory}
             onChange={e => setDirectory(e.target.value)}
-            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+            style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #bbb", fontSize: 15, background: '#fff' }}
             placeholder="可选：分类/栏目"
             disabled={loading}
           />
         </div>
-        <div style={{ marginBottom: 18, textAlign: "center" }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <button
+            type="button"
+            onClick={() => setPreview(v => !v)}
+            style={{
+              padding: "8px 24px",
+              borderRadius: 4,
+              background: preview ? "#0a7" : "#eee",
+              color: preview ? "#fff" : "#333",
+              border: "none",
+              fontSize: 15,
+              cursor: "pointer",
+              marginRight: 10
+            }}
+            disabled={loading}
+          >
+            {preview ? "关闭预览" : "预览正文"}
+          </button>
           <button
             type="submit"
             style={{
@@ -149,7 +174,8 @@ export default function BlogEditPage() {
               background: "#0a7",
               color: "#fff",
               border: "none",
-              fontSize: 16,
+              fontSize: 17,
+              fontWeight: 500,
               cursor: loading ? "not-allowed" : "pointer"
             }}
             disabled={loading}
@@ -161,12 +187,26 @@ export default function BlogEditPage() {
           <div style={{
             textAlign: "center",
             color: msg.includes("成功") ? "#0a7" : "#c00",
-            fontSize: 15
+            fontSize: 16,
+            marginTop: 10
           }}>
             {msg}
           </div>
         )}
       </form>
+      {preview && (
+        <div style={{
+          marginTop: 32,
+          background: '#fff',
+          borderRadius: 8,
+          boxShadow: '0 2px 8px #0001',
+          padding: 24,
+          minHeight: 120
+        }}>
+          <h3 style={{ color: '#0a7', marginBottom: 12 }}>正文预览</h3>
+          <div style={{ whiteSpace: 'pre-wrap', color: '#222', fontSize: 16 }}>{content || '（暂无内容）'}</div>
+        </div>
+      )}
     </div>
   );
 }

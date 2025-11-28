@@ -1,9 +1,9 @@
 /* 美化下拉菜单，宽度12.5vw，高度20vh，紧贴右侧 */
 .avatar-dropdown {
   position: absolute;
-  top: 0;
-  right: -2vw;
-  width: 10vw !important;
+  top: 1vh;
+  right: -4.2vw;
+  width: 12.5vw !important;
   height: 20vh !important;
   background: #fff;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);

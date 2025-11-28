@@ -6,8 +6,9 @@ import { useAuthState } from '../../hooks/useAuthState.js';
 import ExampleSpring from './examples/ExampleSpring.jsx';
 import ExampleAutumn from './examples/ExampleAutumn.jsx';
 import ExampleWinter from './examples/ExampleWinter.jsx';
+import { Link } from 'react-router-dom';
 
-export default function BannerNavbar({ bannerId, children }) {
+export default function BannerNavbar({ bannerId }) {
   const { isLoggedIn, avatarUrl } = useAuthState();
   const BASE_WIDTH = 1650;
   const [navHidden, setNavHidden] = useState(false);
@@ -121,8 +122,8 @@ export default function BannerNavbar({ bannerId, children }) {
     if (!el || !layers.length) return;
   if (isExample) return;
     function layout() {
-      const w = window.innerWidth || document.documentElement.clientWidth || el.clientWidth || BASE_WIDTH;
-      const compensate = w > BASE_WIDTH ? w / BASE_WIDTH : 1;
+      const w = Number(window.innerWidth) || Number(document.documentElement.clientWidth) || Number(el.clientWidth) || Number(BASE_WIDTH);
+      const compensate = w > BASE_WIDTH ? w / Number(BASE_WIDTH) : 1;
       compensateRef.current = compensate;
       const compT = [];
       const mSizes = [];
@@ -242,7 +243,7 @@ export default function BannerNavbar({ bannerId, children }) {
         if (item.opacity) {
           const o0 = parseFloat(item.opacity[0] || 1);
           const o1 = parseFloat(item.opacity[1] || o0);
-          const rectW = (window.innerWidth || document.documentElement.clientWidth || BASE_WIDTH);
+          const rectW = Number(window.innerWidth) || Number(document.documentElement.clientWidth) || Number(BASE_WIDTH);
           const ratio = Math.min(Math.abs(moveXRef.current) / rectW * 2, 1);
           const val = typeof progress === 'number'
             ? (moveXRef.current > 0 ? lerp(o1, o0, progress) : lerp(o0, o1, progress))
@@ -259,7 +260,7 @@ export default function BannerNavbar({ bannerId, children }) {
     function homing(timestamp) {
       if (!animStateRef.current.startTime) animStateRef.current.startTime = timestamp;
       const elapsed = timestamp - animStateRef.current.startTime;
-      const progress = Math.min(elapsed / duration, 1);
+      const progress = Math.min(elapsed / Number(duration), 1);
       applyFor(progress);
       if (progress < 1) raf = requestAnimationFrame(homing); else raf = null;
     }
@@ -344,8 +345,18 @@ export default function BannerNavbar({ bannerId, children }) {
             </div>
           </a>
         </div>
-        <div className="nav-actions">
-          {children}
+        {/* nav-inner 右侧第2-6格：主导航菜单 */}
+        <div className="nav-menu-cell" style={{ gridColumn: '2 / 7', display: 'flex', alignItems: 'center', gap: 18, justifyContent: 'center', height: '100%' }}>
+          <Link to="/" className="nav-link">首页</Link>
+          <Link to="/edit-blog" className="nav-link">发布文章</Link>
+          <Link to="/friend-search" className="nav-link">搜索好友</Link>
+          <Link to="/friend-list" className="nav-link">我的好友</Link>
+          <Link to="/chat" className="nav-link">好友通信</Link>
+          <Link to="/selfspace" className="nav-link">个人资料</Link>
+          <Link to="/api-test" className="nav-link">API测试</Link>
+        </div>
+        {/* nav-inner 右侧第7格：编辑文章按钮 */}
+        <div className="nav-edit-cell">
           <a
             href="/edit-blog"
             className="nav-edit-blog-btn"
@@ -356,6 +367,9 @@ export default function BannerNavbar({ bannerId, children }) {
           >
             编辑文章
           </a>
+        </div>
+        {/* nav-inner 右侧第8格：头像 */}
+        <div className="nav-avatar-cell">
           <NavAvatar isLoggedIn={isLoggedIn} avatarUrl={avatarUrl} />
         </div>
       </div>

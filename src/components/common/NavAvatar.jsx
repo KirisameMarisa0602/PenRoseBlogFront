@@ -71,8 +71,6 @@ export default function NavAvatar({
 
   // 下拉面板显示控制
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  // 鼠标是否在下拉菜单上
-  const [dropdownHover, setDropdownHover] = useState(false);
 
   // 状态类名
   const stateClass = !isLoggedIn
@@ -83,36 +81,36 @@ export default function NavAvatar({
 
   return (
     <div
-      className={`nav-avatar ${stateClass}`}
-      style={{...style, position: 'relative'}}
-      role="button"
-      tabIndex={0}
-      aria-label={alt}
-      onClick={handleClick}
-      onKeyDown={handleKey}
+      className="nav-avatar-wrapper"
+      style={{ position: 'relative', display: 'inline-block' }}
       onMouseEnter={() => isLoggedIn && setDropdownOpen(true)}
-      onMouseLeave={() => isLoggedIn && !dropdownHover && setDropdownOpen(false)}
+      onMouseLeave={() => isLoggedIn && setDropdownOpen(false)}
     >
-      {/* 未登录 CTA */}
-      {!isLoggedIn && (
-        <div className="nav-avatar__cta">去登录 / 注册</div>
-      )}
-      {/* 有头像 */}
-      {isLoggedIn && user && user.avatar && (
-        <img className="nav-avatar__img" src={user.avatar} alt={alt} draggable={false} />
-      )}
-      {/* 无头像占位随机图 */}
-      {isLoggedIn && (!user || !user.avatar) && randomFallback && (
-        <img className="nav-avatar__img" src={randomFallback} alt="占位头像" draggable={false} />
-      )}
+      <div
+        className={`nav-avatar ${stateClass}`}
+        style={style}
+        role="button"
+        tabIndex={0}
+        aria-label={alt}
+        onClick={handleClick}
+        onKeyDown={handleKey}
+      >
+        {/* 未登录 CTA */}
+        {!isLoggedIn && (
+          <div className="nav-avatar__cta">去登录 / 注册</div>
+        )}
+        {/* 有头像 */}
+        {isLoggedIn && user && user.avatar && (
+          <img className="nav-avatar__img" src={user.avatar} alt={alt} draggable={false} />
+        )}
+        {/* 无头像占位随机图 */}
+        {isLoggedIn && (!user || !user.avatar) && randomFallback && (
+          <img className="nav-avatar__img" src={randomFallback} alt="占位头像" draggable={false} />
+        )}
+      </div>
       {/* 下拉面板 */}
       {isLoggedIn && dropdownOpen && user && (
         <div
-          onMouseEnter={() => setDropdownHover(true)}
-          onMouseLeave={() => {
-            setDropdownHover(false);
-            setDropdownOpen(false);
-          }}
           onClick={e => e.stopPropagation()}
           style={{position: 'absolute', top: '100%', right: 0, zIndex: 10000}}
         >
