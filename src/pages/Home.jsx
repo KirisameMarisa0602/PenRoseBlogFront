@@ -19,12 +19,35 @@ const Home = () => {
           console.log('blogpost接口返回:', data);
         }
         let arr = [];
-        if ((data.code === 200 || data.status === 200) && Array.isArray(data.data)) {
-          arr = data.data;
-        } else if ((data.code === 200 || data.status === 200) && data.data && typeof data.data === 'object') {
-          // 某些后端返回对象而非数组
-          arr = Object.values(data.data);
+        if ((data.code === 200 || data.status === 200) && data.data) {
+          // 优先处理常见的分页结构
+          if (Array.isArray(data.data)) {
+            arr = data.data;
+          } else if (Array.isArray(data.data.list)) {
+            arr = data.data.list;
+          } else if (Array.isArray(data.data.content)) {
+            arr = data.data.content;
+          } else {
+            // 回退：从对象的值中找第一个数组（保持向后兼容）
+            const maybeArray = Object.values(data.data).find(v => Array.isArray(v));
+            if (Array.isArray(maybeArray)) {
+              arr = maybeArray;
+            } else {
+              // 最后回退为 Object.values（原逻辑）
+              arr = Object.values(data.data);
+            }
+          }
         }
+
+        // 新增：按 createdAt 倒序排列（最新的在前）
+        if (Array.isArray(arr) && arr.length > 0) {
+          arr.sort((a, b) => {
+            const ta = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return tb - ta;
+          });
+        }
+
         setArticles(arr);
       })
       .catch(err => {

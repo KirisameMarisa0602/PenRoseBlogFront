@@ -24,7 +24,16 @@ export default function ArticleDetailPage() {
       .then(res => res.json())
       .then(data => {
         if ((data.code === 200 || data.status === 200) && data.data) {
-          setComments(data.data);
+          // 兼容后端返回 { list: [...] } 或直接返回数组
+          if (Array.isArray(data.data)) {
+            setComments(data.data);
+          } else if (Array.isArray(data.data.list)) {
+            setComments(data.data.list);
+          } else {
+            setComments([]);
+          }
+        } else {
+          setComments([]);
         }
       });
   }, [id]);
