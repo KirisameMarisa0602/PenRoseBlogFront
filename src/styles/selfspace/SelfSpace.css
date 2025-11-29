@@ -1,4 +1,3 @@
-/* 自空间整页容器 */
 .selfspace-page {
   min-height: 100vh;
   width: 100%;
@@ -46,5 +45,16 @@
   display: flex;
   flex-direction: column;
   padding: 24px;
+  box-sizing: border-box;
+}
+/* 仅保留自空间基础布局 */
+.selfspace-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  background-color: #bebcbe;
+  padding-top: 15vh;
   box-sizing: border-box;
 }

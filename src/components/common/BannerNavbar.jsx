@@ -345,28 +345,15 @@ export default function BannerNavbar({ bannerId }) {
             </div>
           </a>
         </div>
-        {/* nav-inner 右侧第2-6格：主导航菜单 */}
-        <div className="nav-menu-cell" style={{ gridColumn: '2 / 7', display: 'flex', alignItems: 'center', gap: 18, justifyContent: 'center', height: '100%' }}>
-          <Link to="/" className="nav-link">首页</Link>
-          <Link to="/edit-blog" className="nav-link">发布文章</Link>
-          <Link to="/friend-search" className="nav-link">搜索好友</Link>
-          <Link to="/friend-list" className="nav-link">我的好友</Link>
-          <Link to="/chat" className="nav-link">好友通信</Link>
-          <Link to="/selfspace" className="nav-link">个人资料</Link>
-          <Link to="/api-test" className="nav-link">API测试</Link>
-        </div>
+        {/* nav-inner 右侧仅保留编辑文章按钮和头像 */}
         {/* nav-inner 右侧第7格：编辑文章按钮 */}
         <div className="nav-edit-cell">
-          <a
-            href="/edit-blog"
+          <Link
+            to="/blog-edit"
             className="nav-edit-blog-btn"
-            onClick={e => {
-              e.preventDefault();
-              window.location.href = '/edit-blog';
-            }}
           >
             编辑文章
-          </a>
+          </Link>
         </div>
         {/* nav-inner 右侧第8格：头像 */}
         <div className="nav-avatar-cell">

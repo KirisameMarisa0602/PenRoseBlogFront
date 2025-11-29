@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -44,6 +43,8 @@ export default function Welcome() {
     { key: '保密', img: '/imgs/loginandwelcomepanel/3.png' },
   ];
   const selectedGenderIndex = Math.max(0, genderItems.findIndex(g => g.key === registerData.gender));
+
+  // 登录逻辑
   const handleLogin = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -57,9 +58,12 @@ export default function Welcome() {
       setMessageType(res.data.code === 200 ? 'success' : 'error');
       if (res.data.code === 200 && res.data.data) {
         let token = res.data.data;
+        // 兼容后端返回对象或字符串
         if (typeof token === 'object' && token !== null && token.token) {
           token = token.token;
         }
+        // 登录成功后强制清理 localStorage，避免多账号残留
+        localStorage.clear();
         localStorage.setItem('token', token);
 
         // 解析 userId（假设JWT里有userId、id或sub字段）
@@ -71,8 +75,9 @@ export default function Welcome() {
           // 解析失败
         }
 
-        // 拉取用户详细信息
+        // 存储 userId，确保后续页面可用
         if (userId) {
+          localStorage.setItem('userId', userId);
           try {
             const profileRes = await axios.get(`/api/user/profile/${userId}`, {
               headers: { Authorization: `Bearer ${token}` }
@@ -108,6 +113,8 @@ export default function Welcome() {
       }
     }
   };
+
+  // 注册逻辑
   const handleRegister = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -138,8 +145,8 @@ export default function Welcome() {
         password: registerData.password,
         gender: registerData.gender
       });
-  setMessage(res.data.msg);
-  setMessageType(res.data.code === 200 ? 'success' : 'error');
+      setMessage(res.data.msg);
+      setMessageType(res.data.code === 200 ? 'success' : 'error');
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
         setMessage(err.response.data.message);
@@ -153,8 +160,8 @@ export default function Welcome() {
 
   return (
     <div className="container">
-    <div className="welcome">
-  <div className={`pinkbox${showRegister ? ' show-register' : ''}`}>
+      <div className="welcome">
+        <div className={`pinkbox${showRegister ? ' show-register' : ''}`}>  
           <div className={`signup${showRegister ? '' : ' nodisplay'}`}>
             <h1>Register</h1>
             <form autoComplete="off" onSubmit={handleRegister}>

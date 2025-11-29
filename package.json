@@ -12,6 +12,7 @@
     "banner:manifest": "node src/utils/bannergrab/build-manifest.cjs"
   },
   "dependencies": {
+    "@mantine/rte": "^5.10.5",
     "axios": "^1.13.1",
     "jwt-decode": "^4.0.0",
     "live2d-widget": "^3.1.4",

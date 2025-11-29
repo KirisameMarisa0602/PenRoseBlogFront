@@ -17,28 +17,6 @@ function getSexIcon(gender) {
   return sexIconMap['保密'];
 }
 
-function getUserIdFallback() {
-  // 尝试从 localStorage 获取 token 并解包 userId
-  if (typeof localStorage !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      let payload = null;
-      try {
-        payload = token.split('.')[1];
-        if (payload) {
-          let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-          while (base64.length % 4) base64 += '=';
-          const decoded = JSON.parse(atob(base64));
-          const id = decoded.userId || decoded.id || decoded.sub;
-          if (id) return id.toString();
-        }
-      } catch{
-        // ignore
-      }
-    }
-  }
-  return '00000000';
-}
 
 export default function AvatarDropdown({ user, onLogout }) {
   const navigate = useNavigate();
@@ -52,10 +30,8 @@ export default function AvatarDropdown({ user, onLogout }) {
     navigate("/welcome");
   };
 
-  // 昵称兜底
-  const displayName = user.nickname && user.nickname.trim()
-    ? user.nickname
-    : `Cat_${getUserIdFallback()}`;
+  // 直接显示后端昵称
+  const displayName = user.nickname;
   // 性别图标
   const sexIcon = getSexIcon(user.gender);
 
