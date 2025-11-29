@@ -41,6 +41,8 @@ export default function AvatarDropdown({ user, onLogout }) {
         <span className="dropdown-name">{displayName}</span>
         <img className="sex-icon" src={sexIcon} alt={user.gender} />
       </div>
+      <button className="dropdown-btn" onClick={() => navigate('/friends')}>我的好友</button>
+      <button className="dropdown-btn" onClick={() => navigate('/follows')}>我的关注</button>
       <button className="dropdown-btn" onClick={handleSelfSpace}>
         个人空间
       </button>

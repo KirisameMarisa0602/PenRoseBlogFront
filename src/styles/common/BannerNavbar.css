@@ -123,6 +123,20 @@ html, body, #root {
   box-shadow: 0 2px 8px rgba(191,200,218,0.6);
 }
 
+/* small gap for items in edit cell (notification + edit button) */
+.nav-edit-cell > * { margin: 0 6px; }
+
+/* notification bell basic style if component uses .notification-bell */
+.notification-bell {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.notification-bell:hover { background: rgba(0,0,0,0.04); }
+
 /* 移除原 nav-actions 区域的右侧布局（如有） */
 .banner-navbar.is-hidden { transform: translateY(-110%); }
 

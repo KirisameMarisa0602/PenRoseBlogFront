@@ -32,7 +32,12 @@ export default function MessageList() {
             conversations.map(conv => (
               <li key={conv.otherId} className="message-list-item">
                 <a href={`/conversation/${conv.otherId}`} className="message-list-link">
-                  <img src={conv.avatarUrl} alt="avatar" className="message-list-avatar" />
+                  <img
+                    src={conv.avatarUrl || '/imgs/loginandwelcomepanel/1.png'}
+                    alt="avatar"
+                    className="message-list-avatar"
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/imgs/loginandwelcomepanel/1.png'; }}
+                  />
                   <span className="message-list-nickname">{conv.nickname}</span>
                   <span className="message-list-lastmsg">{conv.lastMessage}</span>
                 </a>

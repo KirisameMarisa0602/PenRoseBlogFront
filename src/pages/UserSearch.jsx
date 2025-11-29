@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import BannerNavbar from '../components/common/BannerNavbar';
+import FollowButton from '../components/FollowButton';
+import FriendRequestButton from '../components/FriendRequestButton';
 import '../styles/user/UserSearch.css';
 import { Link } from 'react-router-dom';
 
 export default function UserSearch() {
   const [mode, setMode] = useState('username');
   const [keyword, setKeyword] = useState('');
-  const [results, setResults] = useState([]);
+    const [results, setResults] = useState([]);
+    const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const doSearch = async () => {
@@ -22,7 +25,7 @@ export default function UserSearch() {
       } else {
         setResults([]);
       }
-    } catch (e) {
+    } catch {
       setResults([]);
     } finally {
       setLoading(false);
@@ -42,9 +45,10 @@ export default function UserSearch() {
           <input value={keyword} onChange={e => setKeyword(e.target.value)} placeholder={mode === 'username' ? '输入用户名' : '输入昵称'} />
           <button onClick={doSearch} disabled={loading}>{loading ? '搜索中...' : '搜索'}</button>
         </div>
-
         <ul className="user-search-results">
-          {results.length === 0 ? (
+          {error ? (
+            <li className="empty" style={{color:'red'}}>{error}</li>
+          ) : results.length === 0 ? (
             <li className="empty">没有找到用户</li>
           ) : (
             results.map(u => (
@@ -55,7 +59,12 @@ export default function UserSearch() {
                   <div className="user-username">@{u.username}</div>
                 </div>
                 <div className="user-actions">
-                  <Link to={`/conversation/${u.id}`} className="btn">发消息</Link>
+                  {String(u.id) !== String(localStorage.getItem('userId')) && (
+                    <>
+                      <FriendRequestButton targetId={u.id} />
+                      <FollowButton targetId={u.id} />
+                    </>
+                  )}
                   <Link to={`/selfspace?userId=${u.id}`} className="btn outline">查看</Link>
                 </div>
               </li>

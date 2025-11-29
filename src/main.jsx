@@ -10,6 +10,9 @@ const ArticleDetail = lazy(() => import('./pages/ArticleDetail'));
 const MessageList = lazy(() => import('./pages/MessageList'));
 const ConversationDetail = lazy(() => import('./pages/ConversationDetail'));
 const UserSearch = lazy(() => import('./pages/UserSearch'));
+const PendingFriendRequests = lazy(() => import('./pages/PendingFriendRequests'));
+const FriendsList = lazy(() => import('./pages/FriendsList'));
+const FollowingList = lazy(() => import('./pages/FollowingList'));
 
 ReactDOM.createRoot(document.getElementById('root')).render(
 	<React.StrictMode>
@@ -24,7 +27,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 					   <Route path="/post/:id" element={<ArticleDetail />} />
 					   <Route path="/messages" element={<MessageList />} />
 					   <Route path="/conversation/:otherId" element={<ConversationDetail />} />
-				   	   <Route path="/users/search" element={<UserSearch />} />
+					   <Route path="/friends/pending" element={<PendingFriendRequests />} />
+					   <Route path="/friends" element={<FriendsList />} />
+					   <Route path="/follows" element={<FollowingList />} />
+			    	   <Route path="/users/search" element={<UserSearch />} />
 				   </Routes>
 			</Suspense>
 		</BrowserRouter>

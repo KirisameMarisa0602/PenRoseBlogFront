@@ -29,6 +29,21 @@
   border-bottom: 1px solid #e3e8f0;
   padding: 16px 0;
 }
+/* action buttons in pending requests */
+.message-list-item button {
+  background: linear-gradient(90deg,#6a8cff,#8fd3f4);
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.message-list-item button:nth-child(2) {
+  background: transparent;
+  color: #666;
+  border: 1px solid #e6eefb;
+}
 .message-list-link {
   display: flex;
   align-items: center;

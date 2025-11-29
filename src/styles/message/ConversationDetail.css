@@ -39,9 +39,33 @@
   word-break: break-all;
   position: relative;
 }
+.conversation-detail-msg-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.conversation-detail-msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(191,200,218,0.9);
+}
+.conversation-detail-msg-nickname {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2a3550;
+}
 .conversation-detail-msg.self {
   background: linear-gradient(90deg, #e3e8f0 0%, #c9d6ff 100%);
   margin-left: auto;
+  text-align: right;
+}
+.conversation-detail-msg.self .conversation-detail-msg-meta {
+  justify-content: flex-end;
+}
+.conversation-detail-msg.self .conversation-detail-msg-nickname {
   text-align: right;
 }
 .conversation-detail-msgtime {

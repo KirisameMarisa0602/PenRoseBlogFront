@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import '../../styles/common/BannerNavbar.css';
 import '../../styles/common/NavAvatar.css';
 import NavAvatar from './NavAvatar.jsx';
+import NotificationBell from '../../components/NotificationBell.jsx';
 import { useAuthState } from '../../hooks/useAuthState.js';
 import ExampleSpring from './examples/ExampleSpring.jsx';
 import ExampleAutumn from './examples/ExampleAutumn.jsx';
@@ -430,11 +431,13 @@ export default function BannerNavbar({ bannerId }) {
             私信
           </Link>
         </div>
-        {/* nav-inner 右侧第7格：编辑文章按钮 */}
+        {/* nav-inner 右侧第7格：通知铃 与 编辑文章按钮并列 */}
         <div className="nav-edit-cell">
+          <NotificationBell />
           <Link
             to="/blog-edit"
             className="nav-edit-blog-btn"
+            style={{ marginLeft: 6 }}
           >
             编辑文章
           </Link>

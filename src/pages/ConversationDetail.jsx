@@ -7,9 +7,47 @@ export default function ConversationDetail() {
   const { otherId } = useParams();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [otherInfo, setOtherInfo] = useState({ nickname: '', avatarUrl: '' });
   const userId = localStorage.getItem('userId');
   const messagesEndRef = useRef(null);
+  
+  const mergeMessages = (oldList, newList) => {
+    if ((!oldList || oldList.length === 0) && (!newList || newList.length === 0)) return [];
+    const mergedArr = [];
+    const seen = new Map();
+    const keyOf = (m) => {
+      if (!m) return null;
+      if (m.id != null) return `id:${m.id}`;
+      // fallback composite key: createdAt + sender + receiver + text
+      const time = m.createdAt ? String(m.createdAt) : '';
+      const s = m.senderId != null ? String(m.senderId) : '';
+      const r = m.receiverId != null ? String(m.receiverId) : '';
+      const t = m.text != null ? String(m.text) : '';
+      return `c:${time}|s:${s}|r:${r}|t:${t}`;
+    };
 
+    const pushIfNew = (m) => {
+      const k = keyOf(m);
+      if (!k) return;
+      if (!seen.has(k)) {
+        seen.set(k, true);
+        mergedArr.push(m);
+      }
+    };
+
+    // prefer preserving order: first oldList then newList, but allow newList to override content by key
+    (oldList || []).forEach(pushIfNew);
+    (newList || []).forEach(pushIfNew);
+
+    // sort by createdAt asc (fallback to keep existing order when missing)
+    mergedArr.sort((a, b) => {
+      const ta = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return ta - tb;
+    });
+
+    return mergedArr;
+  };
   useEffect(() => {
     if (!userId || !otherId) return;
     fetch(`/api/messages/conversation/${otherId}`, {
@@ -17,9 +55,25 @@ export default function ConversationDetail() {
     })
       .then(r => r.json())
       .then(j => {
-        if (j && j.code === 200 && j.data) setMessages(j.data.list || []);
+        if (j && j.code === 200 && j.data) setMessages(prev => mergeMessages(prev, j.data.list || []));
       });
   }, [userId, otherId]);
+
+  // derive other user's info from loaded messages
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    const meId = Number(userId);
+    for (let m of messages) {
+      if (m.senderId !== meId) {
+        setOtherInfo({ nickname: m.senderNickname || '', avatarUrl: m.senderAvatarUrl || '' });
+        return;
+      }
+      if (m.receiverId !== meId) {
+        setOtherInfo({ nickname: m.receiverNickname || '', avatarUrl: m.receiverAvatarUrl || '' });
+        return;
+      }
+    }
+  }, [messages, userId]);
 
   // SSE 实时订阅（若服务器端拒绝或不支持，则回退为轮询）
   useEffect(() => {
@@ -36,7 +90,7 @@ export default function ConversationDetail() {
       es.addEventListener('init', e => {
         try {
           const data = JSON.parse(e.data);
-          setMessages(data || []);
+          setMessages(prev => mergeMessages(prev, data || []));
         } catch {
           // ignore parse errors
         }
@@ -44,7 +98,7 @@ export default function ConversationDetail() {
       es.addEventListener('update', e => {
         try {
           const data = JSON.parse(e.data);
-          setMessages(data || []);
+          setMessages(prev => mergeMessages(prev, data || []));
         } catch {
           // ignore parse errors
         }
@@ -64,7 +118,7 @@ export default function ConversationDetail() {
         if (!userId) return;
         fetch(`/api/messages/conversation/${otherId}`, { headers: { 'X-User-Id': userId } })
           .then(r => r.json())
-          .then(j => { if (j && j.code === 200 && j.data) setMessages(j.data.list || []); });
+          .then(j => { if (j && j.code === 200 && j.data) setMessages(prev => mergeMessages(prev, j.data.list || [])); });
       };
       fn();
       pollTimer = setInterval(fn, 4000);
@@ -93,13 +147,13 @@ export default function ConversationDetail() {
     try {
       const j = await res.json();
       if (j && j.code === 200 && j.data) {
-        // append the sent message locally for instant feedback
-        setMessages(prev => [...prev, j.data]);
+        // merge the sent message into the list (dedupe if SSE/poll also returns it)
+        setMessages(prev => mergeMessages(prev, [j.data]));
       } else {
         // fallback: refresh full conversation
         fetch(`/api/messages/conversation/${otherId}`, { headers: { 'X-User-Id': userId } })
           .then(r => r.json())
-          .then(j2 => { if (j2 && j2.code === 200 && j2.data) setMessages(j2.data.list || []); });
+          .then(j2 => { if (j2 && j2.code === 200 && j2.data) setMessages(prev => mergeMessages(prev, j2.data.list || [])); });
       }
     } catch {
       // ignore errors parsing response
@@ -111,10 +165,19 @@ export default function ConversationDetail() {
       <BannerNavbar />
       {/* 顶部导航占位已由全局 `index.css` 的 `padding-top` 提供，无需额外占位元素 */}
       <div className="conversation-detail-container">
-        <h2 className="conversation-detail-title">与Ta的会话</h2>
+        <h2 className="conversation-detail-title">{otherInfo.nickname ? `与 ${otherInfo.nickname} 的会话` : '与Ta的会话'}</h2>
         <div className="conversation-detail-list">
           {messages.map(msg => (
             <div key={msg.id} className={`conversation-detail-msg${msg.senderId === Number(userId) ? ' self' : ''}`}>
+              <div className="conversation-detail-msg-meta">
+                <img
+                  src={msg.senderAvatarUrl || otherInfo.avatarUrl || '/imgs/loginandwelcomepanel/1.png'}
+                  alt="avatar"
+                  className="conversation-detail-msg-avatar"
+                  onError={(e) => { e.target.onerror = null; e.target.src = '/imgs/loginandwelcomepanel/1.png'; }}
+                />
+                <span className="conversation-detail-msg-nickname">{msg.senderNickname || (msg.senderId === Number(userId) ? '你' : otherInfo.nickname)}</span>
+              </div>
               <div className="conversation-detail-msgtext">{msg.text}</div>
               <div className="conversation-detail-msgtime">{new Date(msg.createdAt).toLocaleString()}</div>
             </div>

@@ -40,4 +40,7 @@
 .user-actions { display:flex; gap:8px }
 .btn { padding:6px 10px; background:#6a8cff; color:#fff; border-radius:6px; text-decoration:none }
 .btn.outline { background:transparent; color:#6a8cff; border:1px solid #d6dfe9 }
+.follow-btn { padding:6px 10px; background: linear-gradient(90deg,#55c2a3,#2f9d80); border: none; color: #fff; border-radius:6px; cursor:pointer }
+.friend-request-btn { padding:6px 10px; background: linear-gradient(90deg,#6a8cff,#8fd3f4); border: none; color: #fff; border-radius:6px; cursor: pointer }
+.friend-request-btn.sent { background: #e6eefb; color: #6a8cff; border: 1px solid #d6dfe9 }
 .empty { padding:20px; color:#666; text-align:center }
