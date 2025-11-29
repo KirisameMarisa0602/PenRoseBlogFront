@@ -17,6 +17,7 @@ export default function SelfSpace() {
 
         <main className="selfspace-right-panel" aria-label="个人空间内容区">
           {/* ProfileEditPanel 已集成到 SelfspaceProfileAccordion，无需单独渲染 */}
+          <div style={{ height: '2000px', background: 'rgba(0,0,0,0.03)' }} />
         </main>
       </div>
     </>

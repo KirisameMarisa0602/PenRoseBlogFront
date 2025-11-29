@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AvatarDropdown from './AvatarDropdown';
 import { useAuthState } from '../../hooks/useAuthState';
+import resolveUrl from '../../utils/resolveUrl';
 
 /**
  * 导航栏右上角头像/入口组件 NavAvatar
@@ -101,11 +102,11 @@ export default function NavAvatar({
         )}
         {/* 有头像 */}
         {isLoggedIn && user && user.avatar && (
-          <img className="nav-avatar__img" src={user.avatar} alt={alt} draggable={false} />
+          <img className="nav-avatar__img" src={resolveUrl(user.avatar)} alt={alt} draggable={false} />
         )}
         {/* 无头像占位随机图 */}
         {isLoggedIn && (!user || !user.avatar) && randomFallback && (
-          <img className="nav-avatar__img" src={randomFallback} alt="占位头像" draggable={false} />
+          <img className="nav-avatar__img" src={resolveUrl(randomFallback)} alt="占位头像" draggable={false} />
         )}
       </div>
       {/* 下拉面板 */}

@@ -1,0 +1,17 @@
+/* ArticleCard styles */
+.article-card{
+  display:flex;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.06);
+  overflow:hidden;
+  cursor:pointer;
+  transition:transform .12s ease,box-shadow .12s ease;
+  margin:12px 0;
+}
+.article-card:hover{ transform:translateY(-4px); box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+.article-card-cover{ width:180px; flex:0 0 180px; overflow:hidden; }
+.article-card-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+.article-card-body{ padding:14px; display:flex; flex-direction:column; justify-content:center; }
+.article-card-title{ margin:0 0 8px 0; font-size:18px; color:#222; }
+.article-card-excerpt{ margin:0; color:#666; font-size:14px; line-height:1.5; }

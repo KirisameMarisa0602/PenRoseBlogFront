@@ -1,0 +1,18 @@
+/* 全局重置与基础样式 */
+html, body, #root {
+	width: 100%;
+	min-height: 100vh;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	background-color: #bebcbe; /* 页面整体背景，避免出现左右黑边 */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* 防止水平滚动条由局部元素引起 */
+body { overflow-x: hidden; }
+
+/* 基础链接/图片行为 */
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; height: auto; display: block; }

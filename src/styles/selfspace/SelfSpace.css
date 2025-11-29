@@ -1,24 +1,34 @@
 .selfspace-page {
-  min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: row; /* 左侧手风琴 + 右侧内容并列 */
   position: relative;
-  background-color: #bebcbe; /* 整体深色背景，可按需修改 */
-  /* 顶部为 BannerNavbar 预留空间（与 --navH 一致） */
-  padding-top: 15vh;
+  /* 页面背景由全局 `index.css` 管理，避免局部覆盖引起左右空白 */
+  padding-top: 15vh; /* 为 BannerNavbar 预留空间（与 --navH 保持一致） */
   box-sizing: border-box;
 }
 
 /* 左侧面板：固定在最左侧，宽度 25vw */
 .selfspace-left-panel {
+  /* 固定在视口左侧，始终悬浮在页面左边 */
+  position: fixed;
+  left: 0;
+  top: var(--navH, 15vh); /* 与导航栏高度保持一致，优先使用 --navH */
   width: 25vw;
   min-width: 260px;
   max-width: 420px;
-  height: 100vh;
+  height: calc(100vh - var(--navH, 15vh));
   display: flex;
   align-items: stretch;
   justify-content: stretch;
+  z-index: 50;
+  overflow: auto; /* 若内容超高则左右侧独立滚动 */
+}
+
+/* 当导航栏收起时，使左侧面板延伸至整页高度（从顶端到页底） */
+.banner-is-hidden .selfspace-left-panel {
+  top: 0; /* 拉到视口顶端 */
+  height: 100vh; /* 占满整个视口高度 */
 }
 
 /* 左侧内部：放置 selfspaceProfileAccordion */
@@ -39,7 +49,8 @@
 
 /* 右侧内容区：占据剩余空间 */
 .selfspace-right-panel {
-  flex: 1 1 auto;
+  /* 给主内容区留出左侧固定面板的空间，避免重叠 */
+  margin-left: 25vw;
   min-width: 0;
   min-height: 100vh;
   display: flex;

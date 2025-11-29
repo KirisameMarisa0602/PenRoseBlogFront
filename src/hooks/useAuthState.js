@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import resolveUrl from '../utils/resolveUrl';
 
 /**
  * useAuthState
@@ -8,10 +9,12 @@ import { useEffect, useState } from 'react';
 export function useAuthState() {
   const read = () => {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
-    const avatar = typeof localStorage !== 'undefined' ? (localStorage.getItem('avatarUrl') || '') : '';
+    const rawAvatar = typeof localStorage !== 'undefined' ? (localStorage.getItem('avatarUrl') || '') : '';
     const nickname = typeof localStorage !== 'undefined' ? (localStorage.getItem('nickname') || '') : '';
     const gender = typeof localStorage !== 'undefined' ? (localStorage.getItem('gender') || 'other') : 'other';
-    const backgroundUrl = typeof localStorage !== 'undefined' ? (localStorage.getItem('backgroundUrl') || '') : '';
+    const rawBackground = typeof localStorage !== 'undefined' ? (localStorage.getItem('backgroundUrl') || '') : '';
+    const avatar = rawAvatar ? resolveUrl(rawAvatar) : '';
+    const backgroundUrl = rawBackground ? resolveUrl(rawBackground) : '';
     return {
       isLoggedIn: !!token,
       user: {

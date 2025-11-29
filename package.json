@@ -13,14 +13,19 @@
   },
   "dependencies": {
     "@mantine/rte": "^5.10.5",
+    "@uiw/react-md-editor": "^4.0.8",
     "axios": "^1.13.1",
     "jwt-decode": "^4.0.0",
     "live2d-widget": "^3.1.4",
+    "markdown-it": "^14.1.0",
     "pixi-live2d-display": "^0.4.0",
     "pixi.js": "^6.5.10",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.5"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-mde": "^11.5.0",
+    "react-quill": "^2.0.0",
+    "react-router-dom": "^7.9.5",
+    "showdown": "^2.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

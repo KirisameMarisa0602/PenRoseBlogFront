@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import resolveUrl from '../../../utils/resolveUrl';
 import '../../../styles/selfspace/SelfspaceProfileAccordion/selfspaceProfileAccordion.css';
 
 // 个人空间左侧手风琴面板
@@ -12,6 +13,36 @@ export default function SelfspaceProfileAccordion({ panelWidth = '100%', panelHe
     if (containerRef.current) {
       setContainerHeight(containerRef.current.offsetHeight);
     }
+
+    // 监听容器尺寸变化（例如导航栏收起导致 left-panel 高度变化）
+    let ro = null;
+    try {
+      if (window.ResizeObserver && containerRef.current) {
+        ro = new ResizeObserver(entries => {
+          for (let entry of entries) {
+            const h = entry.contentRect ? entry.contentRect.height : (containerRef.current ? containerRef.current.offsetHeight : 0);
+            setContainerHeight(h);
+          }
+        });
+        ro.observe(containerRef.current);
+      }
+    } catch {
+      ro = null;
+    }
+
+    const onWinResize = () => {
+      if (containerRef.current) setContainerHeight(containerRef.current.offsetHeight);
+    };
+    window.addEventListener('resize', onWinResize);
+
+    return () => {
+      window.removeEventListener('resize', onWinResize);
+      try {
+        if (ro && ro.disconnect) ro.disconnect();
+      } catch {
+        // ignore
+      }
+    };
   }, [panelHeight]);
 
   const getPanelHeight = (idx) => {
@@ -74,6 +105,27 @@ export default function SelfspaceProfileAccordion({ panelWidth = '100%', panelHe
     }
   }, [hoverIdx, userId, token, initialProfile]);
 
+  // 在组件挂载时先从 localStorage 初始化 profile，保证进入个人空间时左侧面板能立即显示
+  useEffect(() => {
+    try {
+      const storedAvatar = localStorage.getItem('avatarUrl') || '';
+      const storedBackground = localStorage.getItem('backgroundUrl') || '';
+      const storedNickname = localStorage.getItem('nickname') || '';
+      const storedGender = localStorage.getItem('gender') || '';
+      const storedId = localStorage.getItem('userId') || '';
+      setProfile(prev => ({
+        ...prev,
+        id: storedId,
+        nickname: storedNickname,
+        avatarUrl: storedAvatar,
+        backgroundUrl: storedBackground,
+        gender: storedGender,
+      }));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // 编辑表单变更
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -131,8 +183,17 @@ export default function SelfspaceProfileAccordion({ panelWidth = '100%', panelHe
         }
       });
       if (res.data && res.data.code === 200 && res.data.data) {
-        setProfile(prev => ({ ...prev, avatarUrl: res.data.data }));
         setEditMsg('头像上传成功');
+        // 上传成功后刷新用户信息
+        axios.get(`/api/user/profile/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(res2 => {
+          if (res2.data && res2.data.code === 200 && res2.data.data) {
+            setProfile(res2.data.data);
+            localStorage.setItem('avatarUrl', res2.data.data.avatarUrl || '');
+            window.dispatchEvent(new Event('auth-changed'));
+          }
+        });
       } else {
         setEditMsg(res.data?.msg || res.data?.message || '头像上传失败');
       }
@@ -165,8 +226,17 @@ export default function SelfspaceProfileAccordion({ panelWidth = '100%', panelHe
         }
       });
       if (res.data && res.data.code === 200 && res.data.data) {
-        setProfile(prev => ({ ...prev, backgroundUrl: res.data.data }));
         setEditMsg('背景上传成功');
+        // 上传成功后刷新用户信息
+        axios.get(`/api/user/profile/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(res2 => {
+          if (res2.data && res2.data.code === 200 && res2.data.data) {
+            setProfile(res2.data.data);
+            localStorage.setItem('backgroundUrl', res2.data.data.backgroundUrl || '');
+            window.dispatchEvent(new Event('auth-changed'));
+          }
+        });
       } else {
         setEditMsg(res.data?.msg || res.data?.message || '背景上传失败');
       }
@@ -192,11 +262,39 @@ export default function SelfspaceProfileAccordion({ panelWidth = '100%', panelHe
             <div
               key={idx}
               className={`profilepanel-section${isActive ? ' profilepanel-section-active' : ''}`}
-              style={{ height: getPanelHeight(idx), minHeight: getPanelHeight(idx) }}
+              style={{
+                height: getPanelHeight(idx),
+                minHeight: getPanelHeight(idx),
+                position: 'relative',
+                overflow: 'hidden',
+                background: 'transparent',
+              }}
               onMouseEnter={() => setHoverIdx(idx)}
             >
               <div className={`profilepanel-content${isActive ? ' profilepanel-content-active' : ' profilepanel-content-collapsed'}`}>
-                <div className="profilepanel-empty-panel" />
+                {/* 用户背景作为第一模块背景 */}
+                {profile.backgroundUrl && (
+                  /\.(mp4|webm)$/i.test(profile.backgroundUrl)
+                    ? (
+                      <video
+                        src={resolveUrl(profile.backgroundUrl)}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="profilepanel-bg-video"
+                        style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+                      />
+                    ) : (
+                      <img
+                        src={resolveUrl(profile.backgroundUrl)}
+                        alt="背景"
+                        className="profilepanel-bg-img"
+                        style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+                      />
+                    )
+                )}
+                <div className="profilepanel-empty-panel" style={{ position: 'relative', zIndex: 1 }} />
               </div>
             </div>
           );
@@ -234,8 +332,12 @@ export default function SelfspaceProfileAccordion({ panelWidth = '100%', panelHe
                           <label>头像：</label>
                           <input type="file" accept="image/*,image/gif" onChange={handleAvatarUpload} style={{marginTop:4}} />
                           {profile.avatarUrl && (
-                            <div style={{marginTop:4}}>
-                              <img src={profile.avatarUrl} alt="头像预览" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover',border:'1px solid #ccc'}} />
+                            <div className="profilepanel-avatar-preview">
+                              <img
+                                src={resolveUrl(profile.avatarUrl)}
+                                alt="头像预览"
+                                className="profilepanel-avatar-img"
+                              />
                             </div>
                           )}
                         </div>
@@ -243,12 +345,21 @@ export default function SelfspaceProfileAccordion({ panelWidth = '100%', panelHe
                           <label>背景：</label>
                           <input type="file" accept="image/*,image/gif,video/mp4,video/webm" onChange={handleBackgroundUpload} style={{marginTop:4}} />
                           {profile.backgroundUrl && (
-                            <div style={{marginTop:4}}>
-                              {/^(https?:)?\/\/.*\.(mp4|webm)$/i.test(profile.backgroundUrl) ? (
-                                <video src={profile.backgroundUrl} controls style={{width:120,maxHeight:80,background:'#000'}} />
-                              ) : (
-                                <img src={profile.backgroundUrl} alt="背景预览" style={{width:120,maxHeight:80,objectFit:'cover',border:'1px solid #ccc'}} />
-                              )}
+                            <div className="profilepanel-bg-preview">
+                              {/\.(mp4|webm)$/i.test(profile.backgroundUrl)
+                                  ? (
+                                  <video
+                                    src={resolveUrl(profile.backgroundUrl)}
+                                    controls
+                                    className="profilepanel-bg-video"
+                                  />
+                                ) : (
+                                  <img
+                                    src={resolveUrl(profile.backgroundUrl)}
+                                    alt="背景预览"
+                                    className="profilepanel-bg-img"
+                                  />
+                                )}
                             </div>
                           )}
                         </div>

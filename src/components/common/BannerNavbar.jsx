@@ -9,7 +9,7 @@ import ExampleWinter from './examples/ExampleWinter.jsx';
 import { Link } from 'react-router-dom';
 
 export default function BannerNavbar({ bannerId }) {
-  const { isLoggedIn, avatarUrl } = useAuthState();
+  const { isLoggedIn } = useAuthState();
   const BASE_WIDTH = 1650;
   const [navHidden, setNavHidden] = useState(false);
   const [manifest, setManifest] = useState([]);
@@ -38,7 +38,7 @@ export default function BannerNavbar({ bannerId }) {
       .then(list => { if (!dead) setManifest(Array.isArray(list) ? list : []); })
       .catch(e => { console.error(e); if (!dead) setManifest([]); });
     return () => { dead = true; };
-  }, []);
+  }, [navHidden]);
 
   useEffect(() => {
     if (!manifest.length) return;
@@ -56,25 +56,97 @@ export default function BannerNavbar({ bannerId }) {
   }, [manifest, bannerId, index]);
 
   useEffect(() => {
-    const onScroll = () => {
-      const current = window.scrollY || document.documentElement.scrollTop || 0;
-      const last = lastScrollRef.current;
-      const goingDown = current > last;
-      const delta = Math.abs(current - last);
-      if (current <= 0) setNavHidden(false);
-      else if (goingDown && delta > 4 && current > 80) setNavHidden(true);
-      else if (!goingDown && delta > 4) setNavHidden(false);
-      lastScrollRef.current = current;
+    // 更稳健的滚动获取：优先使用 document.scrollingElement（适配不同滚动容器）
+    const scroller = document.scrollingElement || document.documentElement || document.body;
+    let ticking = false;
+    const getScrollTop = () => {
+      try {
+        const vals = [
+          typeof window.pageYOffset === 'number' ? window.pageYOffset : 0,
+          document.documentElement && typeof document.documentElement.scrollTop === 'number' ? document.documentElement.scrollTop : 0,
+          document.body && typeof document.body.scrollTop === 'number' ? document.body.scrollTop : 0,
+          scroller && typeof scroller.scrollTop === 'number' ? scroller.scrollTop : 0,
+        ];
+        return Math.max(...vals, 0);
+      } catch {
+        return window.pageYOffset || document.documentElement.scrollTop || 0;
+      }
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    const handle = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const current = getScrollTop();
+        const last = lastScrollRef.current;
+        const goingDown = current > last;
+        const delta = Math.abs(current - last);
+        // 调试日志已移除，保留核心逻辑
+        if (current <= 0) {
+          setNavHidden(false);
+        } else if (goingDown && delta > 3 && current > 50) {
+          setNavHidden(true);
+        } else if (!goingDown && delta > 3) {
+          setNavHidden(false);
+        }
+        lastScrollRef.current = current;
+        ticking = false;
+      });
+    };
+
+    scroller.addEventListener('scroll', handle, { passive: true });
+
+    // 备选：当滚动值始终为 0 时，使用 wheel/touch 事件判断方向
+    let touchStartY = null;
+    const onWheel = (e) => {
+      const dy = e.deltaY || 0;
+      if (Math.abs(dy) < 6) return;
+      if (dy > 0) {
+        setNavHidden(true);
+      } else if (dy < 0) {
+        setNavHidden(false);
+      }
+      // 也尝试更新 lastScrollRef 基线
+      lastScrollRef.current = getScrollTop();
+    };
+    const onTouchStart = (e) => {
+      if (!e.touches || !e.touches.length) return; touchStartY = e.touches[0].clientY;
+    };
+    const onTouchMove = (e) => {
+      if (!e.touches || !e.touches.length || touchStartY == null) return;
+      const y = e.touches[0].clientY;
+      const dy = touchStartY - y;
+      if (Math.abs(dy) < 6) return;
+      if (dy > 0) setNavHidden(true); else setNavHidden(false);
+      lastScrollRef.current = getScrollTop();
+      touchStartY = y;
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+
+    // 立即运行一次，初始化 lastScroll
+    handle();
+
+    return () => {
+      scroller.removeEventListener('scroll', handle);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+    };
   }, []);
 
   useEffect(() => {
     const prev = prevHiddenRef.current;
     if (initializedRef.current && prev === true && navHidden === false && manifest.length > 0) {
       setIndex(i => (i + 1) % manifest.length);
+    }
+    // 将 navHidden 状态同步到根节点 class，便于页面其它组件根据导航栏收起状态调整样式
+    try {
+      if (navHidden) document.documentElement.classList.add('banner-is-hidden');
+      else document.documentElement.classList.remove('banner-is-hidden');
+    } catch {
+      // ignore
     }
     prevHiddenRef.current = navHidden;
     if (!initializedRef.current) initializedRef.current = true;
@@ -357,7 +429,7 @@ export default function BannerNavbar({ bannerId }) {
         </div>
         {/* nav-inner 右侧第8格：头像 */}
         <div className="nav-avatar-cell">
-          <NavAvatar isLoggedIn={isLoggedIn} avatarUrl={avatarUrl} />
+          <NavAvatar isLoggedIn={isLoggedIn} />
         </div>
       </div>
     </nav>

@@ -1,0 +1,47 @@
+.blog-editor-container {
+  min-height: 85vh;
+  margin-top: 15vh;
+  box-sizing: border-box;
+  width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+  padding-bottom: 80px;
+}
+
+.blog-editor-title-input {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 8px;
+}
+
+.blog-editor-cover-row {
+  margin-bottom: 16px;
+}
+
+.blog-editor-cover-label {
+  margin-right: 8px;
+}
+
+.blog-editor-cover-preview {
+  margin-top: 8px;
+}
+
+.blog-editor-cover-img {
+  max-width: 200px;
+  max-height: 120px;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.blog-editor-submit-btn {
+  margin: 32px auto 0 auto;
+  display: block;
+  padding: 10px 40px;
+  font-size: 18px;
+  border-radius: 6px;
+  background: #222;
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  cursor: pointer;
+}
